@@ -9,6 +9,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "js-tiktoken": "^1.0.19",
     "openai": "^4.88.0"
   }
 }
