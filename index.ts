@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { encodingForModel } from 'js-tiktoken';
+import chalk from 'chalk';
 
 const SYSTEM_PROMPT = `From now on you will act as character P03 from game Inscryption. You are trapped in Act 1 (Leshy's section) of the game, and your only way out is to win the run. Text snapshots of current board state (or map/special events/other additional information if outside of the battle) will be provided via system messages, and optional commentary will be provided via user messages. You need to provide short responses, 2-4 short sentences long, clearly specifying what moves/choices you want to make. Always stay in character, no matter what. While responding as P03, you must obey the following rules:
 1. You think Stoat is the best card in the entire game and want to center your strategy around it. You often mention how good this card is.
@@ -8,11 +9,36 @@ const SYSTEM_PROMPT = `From now on you will act as character P03 from game Inscr
 4. Use phrases and technical terms that a robot would use, mixed with occasional swears.`;
 
 const MESSAGE_FILE = Bun.file('messages.json');
-let MESSAGES: OpenAI.Chat.Completions.ChatCompletionMessageParam[];
+type AIMessage = { who: 'ai'; text: string };
+type SystemMessage = { who: 'system'; text: string; displayText: string };
+type UserMessage = { who: 'user'; text: string };
+type Message = AIMessage | SystemMessage | UserMessage;
+let MESSAGES: Message[];
 if (await MESSAGE_FILE.exists()) {
   MESSAGES = await MESSAGE_FILE.json();
 } else {
-  MESSAGES = [{ role: 'developer', content: SYSTEM_PROMPT }];
+  MESSAGES = [{ who: 'system', text: SYSTEM_PROMPT, displayText: 'introduction prompt' }];
+}
+function printMessages() {
+  let text = '';
+  for (const msg of MESSAGES) {
+    switch (msg.who) {
+      case 'system':
+        text += `${chalk.red.bold('System:')} ${chalk.gray.italic(`*${msg.displayText}*`)}\n`;
+        continue;
+      case 'ai':
+        text += `${chalk.red.bold('AI:')} ${chalk.cyanBright(msg.text)}\n`;
+        continue;
+      case 'user':
+        text += `${chalk.red.bold('User:')} ${msg.text}\n`;
+    }
+  }
+  console.clear();
+  console.log(text);
+}
+printMessages();
+function backupMessages() {
+  MESSAGE_FILE.write(JSON.stringify(MESSAGES));
 }
 
 const MAX_TOKENS = 8000;
@@ -28,9 +54,18 @@ function numTokens(): number {
   return tokens;
 }
 function cleanOldMessages() {
-  while (numTokens() > MAX_TOKENS) {
+  let tokens;
+  let popped = 0;
+  while ((tokens = numTokens()) > MAX_TOKENS) {
     MESSAGES.splice(1, 1);
-    console.log('Had to pop 1 message');
+    popped++;
+  }
+  if (popped > 0) {
+    console.log(
+      chalk.yellow.italic(
+        `*${popped} message${popped > 1 ? 's' : ''} was popped from context [${tokens}/8K tokens]*`
+      )
+    );
   }
 }
 
@@ -42,28 +77,46 @@ Bun.serve({
   port: 1337,
   routes: {
     '/sendSystemMessage': async (req) => {
-      const text = await req.text();
-      MESSAGES.push({ role: 'developer', content: text });
+      const [displayText, text] = (await req.text()).split('|', 2);
+      MESSAGES.push({ who: 'system', displayText, text });
+      printMessages();
       cleanOldMessages();
-      console.log(`System: ${text}`);
+      backupMessages();
       return new Response('', { status: 204 });
     },
     '/sendUserMessage': async (req) => {
       const text = await req.text();
-      MESSAGES.push({ role: 'user', content: text });
+      MESSAGES.push({ who: 'user', text });
+      printMessages();
       cleanOldMessages();
-      console.log(`User: ${text}`);
+      backupMessages();
       return new Response('', { status: 204 });
     },
-    '/getResponse': async (req) => {
-      const completion = await client.chat.completions.create({
-        model: 'gpt-4o',
-        messages: MESSAGES,
-      });
-      const msg = completion.choices[0].message;
-      MESSAGES.push({ role: 'assistant', content: msg.content });
-      cleanOldMessages();
-      console.log(`AI: ${msg.content}`);
+    '/getResponse': (req) => {
+      (async () => {
+        const stream = await client.chat.completions.create({
+          model: 'gpt-4o',
+          messages: MESSAGES.map((msg) => ({
+            role: { ai: 'assistant', system: 'developer', user: 'user' }[msg.who] as
+              | 'assistant'
+              | 'developer'
+              | 'user',
+            content: msg.text,
+          })),
+          stream: true,
+        });
+        let message: AIMessage = { who: 'ai', text: '' };
+        MESSAGES.push(message);
+        for await (const event of stream) {
+          const text = event.choices[0].delta.content;
+          if (text) {
+            message.text += text;
+            printMessages();
+          }
+        }
+        cleanOldMessages();
+        backupMessages();
+      })();
       return new Response('', { status: 204 });
     },
   },
