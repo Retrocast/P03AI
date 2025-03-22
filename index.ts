@@ -77,7 +77,7 @@ Bun.serve({
   port: 1337,
   routes: {
     '/sendSystemMessage': async (req) => {
-      const [displayText, text] = (await req.text()).split('|', 2);
+      const [displayText, text] = decodeURIComponent(await req.text()).split('|', 2);
       MESSAGES.push({ who: 'system', displayText, text });
       printMessages();
       cleanOldMessages();
@@ -85,15 +85,18 @@ Bun.serve({
       return new Response('', { status: 204 });
     },
     '/sendUserMessage': async (req) => {
-      const text = await req.text();
+      const text = decodeURIComponent(await req.text());
       MESSAGES.push({ who: 'user', text });
       printMessages();
       cleanOldMessages();
       backupMessages();
       return new Response('', { status: 204 });
     },
-    '/getResponse': (req) => {
+    '/getResponse': (_) => {
       (async () => {
+        let message: AIMessage = { who: 'ai', text: '' };
+        MESSAGES.push(message);
+        printMessages();
         const stream = await client.chat.completions.create({
           model: 'gpt-4o',
           messages: MESSAGES.map((msg) => ({
@@ -105,8 +108,6 @@ Bun.serve({
           })),
           stream: true,
         });
-        let message: AIMessage = { who: 'ai', text: '' };
-        MESSAGES.push(message);
         for await (const event of stream) {
           const text = event.choices[0].delta.content;
           if (text) {
