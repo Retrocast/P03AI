@@ -37,8 +37,17 @@ static void Update() {
         displayText("Currently in card battle");
         break;
       case DiskCardGame.GameState.Map:
-        displayText($"Available next map nodes: {string.Join(", ", System.Linq.Enumerable.Select(getMapNode().connectedNodes, (n) => n.GetType().Name))}");
-        break;
+        var nodes = getMapNode().connectedNodes;
+        if (nodes.Count == 0) {
+          displayText("[c:bR]No map nodes![c:]");
+          return;
+        }
+        if (nodes.Count == 1) {
+          displayText("[c:bR]Only one map node! No need to ask AI about it.[c:]");
+          return;
+        }
+        displayText($"Available next map nodes: {string.Join(", ", System.Linq.Enumerable.Select(nodes, (n) => n.GetType().Name))}");
+        return;
       case DiskCardGame.GameState.FirstPerson3D:
         displayText("[c:bR]Cannot get data from FirstPerson3D![c:]");
         break;
