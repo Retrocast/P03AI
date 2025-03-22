@@ -1,3 +1,10 @@
+// Disclaimer: the code is terrible!
+// Firstly, because of how I injected code into the game, I was not able to use `using` statements.
+// That's why I had to fully qualify all type names, making everything overly verbose.
+// Secondly, I did most of the code editing in-game or in Code-OSS without any C# extensions. Basic syntax highlighting is all I had.
+// And thirdly, I have no frickin' clue how to code in C# XD
+// But hey, at least it compiles/works, right?
+
 static void displayText(string text) {
   var td = Singleton<DiskCardGame.TextDisplayer>.Instance;
   td.StartCoroutine(td.ShowThenClear(text, 1, speaker: DialogueEvent.Speaker.Goo));
@@ -60,6 +67,9 @@ static void Update() {
   }
 }
 
+// The thingy that actually calls the Update as patch for ManagedUpdate of OilPaintingPuzzle and wraps it in try/catch.
+// Seems like a good candidate, since it is always present in cabin in single instance.
+// In case it causes any issues, it can be moved to any other single/global object's Update/ManagedUpdate.
 static void Postfix(DiskCardGame.OilPaintingPuzzle __instance)
 {
   try {
