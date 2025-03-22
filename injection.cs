@@ -1,5 +1,7 @@
-static DiskCardGame.TextDisplayer td = Singleton<DiskCardGame.TextDisplayer>.Instance;
-static Action<string> displayText = (text) => td.StartCoroutine(td.ShowThenClear(text, 1, speaker: DialogueEvent.Speaker.Goo));
+static void displayText(string text) {
+  var td = Singleton<DiskCardGame.TextDisplayer>.Instance;
+  td.StartCoroutine(td.ShowThenClear(text, 1, speaker: DialogueEvent.Speaker.Goo));
+}
 static DiskCardGame.GameFlowManager gfm = Singleton<DiskCardGame.GameFlowManager>.Instance;
 static Func<DiskCardGame.NodeData> getMapNode = () => DiskCardGame.RunState.Run.map.nodeData.Find(n => n.id == DiskCardGame.RunState.Run.currentNodeId);
 static string sConsumables() {
