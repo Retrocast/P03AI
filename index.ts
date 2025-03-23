@@ -81,7 +81,7 @@ function generateAPIMessages(meta: string): OpenAI.ChatCompletionMessageParam[] 
     };
     if (i == MESSAGES.length - 1) {
       // Only append the latest meta to latest message.
-      message.content += `\n${meta}`;
+      message.content += `\n\n${meta}`;
     }
     if (msg.who == 'system' && MESSAGES.length > 10 && 10 - i > 0) {
       // When there are more than 10 messages, remove stuff inside of [square brackets] in all system messages older than 10.
@@ -91,6 +91,10 @@ function generateAPIMessages(meta: string): OpenAI.ChatCompletionMessageParam[] 
         // Not sure whether that can happen, but extra-old messages will just get replaced with displayText.
         message.content = `*${msg.displayText}*`;
       }
+    }
+    if (msg.who == 'user') {
+      (message as OpenAI.ChatCompletionUserMessageParam).name = 'Retrocast';
+      message.content = `Message from Retrocast: """\n${message.content}\n"""`;
     }
     return message;
   });
