@@ -38,7 +38,7 @@ function printMessages() {
 }
 printMessages();
 function backupMessages() {
-  MESSAGE_FILE.write(JSON.stringify(MESSAGES));
+  MESSAGE_FILE.write(JSON.stringify(MESSAGES, null, 2));
 }
 
 const MAX_TOKENS = 8000;
