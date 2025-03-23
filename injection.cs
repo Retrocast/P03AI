@@ -87,6 +87,10 @@ static string sTotemPiece(DiskCardGame.SelectableItemSlot s) {
 }
 static string sWoodcarverEvent() {
   var seq = snh().buildTotemSequencer;
+  if (seq.GetFirstEmptyInventorySlot() == null || (DiskCardGame.RunState.Run.totemTops.Count+DiskCardGame.RunState.Run.totemBottoms.Count) >= 7) {
+    var amalgam = seq.gameObject.GetComponentInChildren<DiskCardGame.SelectableCard>().Info;
+    return $"A look of regret fell over the old woodcarver. You were overburdened with totem pieces and you could carry no more.\nShe gestured toward a disturbing creature lurking nearby.\n{sCardInfo(amalgam)} was added to your deck.\nCanine. Hooved. Reptile. Bird. Insect. The Amalgam is all.";
+  }
   var pieces = string.Join("\n", System.Linq.Enumerable.Select(seq.slots, (s) => $"- {sTotemPiece(s)}"));
   return $"You are currently at Woodcarver's event, where you pick one of 3 totem pieces. Tops indicate a tribe. Bottoms indicate the sigil that will be added to all cards of that tribe on top. You need at least one top and bottom to build a totem. If you already have a totem, but one of offered pieces will make it even better, pick it and say you want to change the totem. If your current is better than what you can build with current options, just pick the lesser of evils and say you want to keep the current totem.\nTotem pieces you can pick:\n{pieces}";
 }
