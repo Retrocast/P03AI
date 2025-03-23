@@ -46,7 +46,7 @@ const TT = encodingForModel('gpt-4o');
 function numTokens(): number {
   // Loosely based on https://github.com/DougDougGithub/Babagaboosh/blob/main/openai_chat.py#L6
   let tokens = 0;
-  for (const msg of MESSAGES) {
+  for (const msg of generateAPIMessages('')) {
     tokens += 4;
     for (const value of Object.values(msg)) tokens += TT.encode(value).length;
   }
@@ -63,10 +63,37 @@ function cleanOldMessages() {
   if (popped > 0) {
     console.log(
       chalk.yellow.italic(
-        `*${popped} message${popped > 1 ? 's' : ''} was popped from context [${tokens}/8K tokens]*`
+        `*${popped} message${
+          popped > 1 ? 's' : ''
+        } was popped from chat context [${tokens}/8K tokens]*`
       )
     );
   }
+}
+function generateAPIMessages(meta: string): OpenAI.ChatCompletionMessageParam[] {
+  return MESSAGES.map((msg, i) => {
+    const message = {
+      role: { ai: 'assistant', system: 'developer', user: 'user' }[msg.who] as
+        | 'assistant'
+        | 'developer'
+        | 'user',
+      content: msg.text,
+    };
+    if (i == MESSAGES.length - 1) {
+      // Only append the latest meta to latest message.
+      message.content += `\n${meta}`;
+    }
+    if (msg.who == 'system' && MESSAGES.length > 10 && 10 - i > 0) {
+      // When there are more than 10 messages, remove stuff inside of [square brackets] in all system messages older than 10.
+      // It is mostly verbose descriptions that are either duplicated anyways or quickly become irrelevant.
+      message.content = msg.text.replaceAll(/\[[^\[\]]*(?:\[[^\[\]]*\][^\[\]]*)*\]/g, '');
+      if (MESSAGES.length > 20 && 20 - i > 0) {
+        // Not sure whether that can happen, but extra-old messages will just get replaced with displayText.
+        message.content = `*${msg.displayText}*`;
+      }
+    }
+    return message;
+  });
 }
 
 const client = new OpenAI({
@@ -92,20 +119,15 @@ Bun.serve({
       backupMessages();
       return new Response('', { status: 204 });
     },
-    '/getResponse': (_) => {
+    '/getResponse': async (req) => {
+      const text = decodeURIComponent(await req.text());
       (async () => {
         let message: AIMessage = { who: 'ai', text: '' };
         MESSAGES.push(message);
         printMessages();
         const stream = await client.chat.completions.create({
           model: 'gpt-4o',
-          messages: MESSAGES.map((msg) => ({
-            role: { ai: 'assistant', system: 'developer', user: 'user' }[msg.who] as
-              | 'assistant'
-              | 'developer'
-              | 'user',
-            content: msg.text,
-          })),
+          messages: generateAPIMessages(text),
           stream: true,
         });
         for await (const event of stream) {
