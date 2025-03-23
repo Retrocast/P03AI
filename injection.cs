@@ -29,7 +29,7 @@ static string sTotems() {
   var tops = _tops.Count == 0 ? "you don't have any" : string.Join(", ", _tops);
   var _bottoms = DiskCardGame.RunState.Run.totemBottoms;
   var bottoms = _bottoms.Count == 0 ? "you don't have any" : string.Join(", ", System.Linq.Enumerable.Select(_bottoms, a => sAbilityInfo(a)));
-  return $"YOUR Current totem (creatures of tribe X get sigil Y): {totem}\n[{_tops.Count}] YOUR totem _tops (tribes): {tops}\n[{_bottoms.Count}] YOUR totem _bottoms (abilities): {bottoms}";
+  return $"YOUR Current totem (creatures of tribe X get sigil Y): {totem}\n[{_tops.Count}] YOUR totem tops (tribes): {tops}\n[{_bottoms.Count}] YOUR totem bottoms (sigils): {bottoms}";
 }
 static string sCardInfo(DiskCardGame.CardInfo c) {
 	if (c.name == "!STATIC!GLITCH") return "Static glitch card (turns into random card when drawn)";
@@ -59,7 +59,22 @@ static System.Collections.IEnumerator sendSystemMessage(string displayText, stri
   yield return coDisplayText(_text);
 }
 
-static string nodeDescription(DiskCardGame.NodeData n) {
+static System.Collections.IEnumerator getResponse(string meta)
+{
+  string url = "http://localhost:1337/getResponse";
+  var www = UnityEngine.Networking.UnityWebRequest.Post(url, meta);
+  yield return www.SendWebRequest();
+  string _text;
+  if (www.isNetworkError || www.isHttpError) {
+    UnityEngine.Debug.LogError(www.error);
+    _text = "[c:bR]Request error, check the console![c:]";
+  } else {
+    _text = "AI generation started";
+  }
+  yield return coDisplayText(_text);
+}
+
+static string sNodeData(DiskCardGame.NodeData n) {
   if (n is DiskCardGame.BossBattleNodeData b) {
     return $"Boss battle node - {b.bossType}BattleSequencer";
   }
@@ -118,7 +133,14 @@ static string nodeDescription(DiskCardGame.NodeData n) {
   return "Unknown node[Something went wrong. Blame Retrocast.]";
 }
 
+static string getMetadata() {
+  return $"{sDeck()}\n{sConsumables()}\n{sTotems()}";
+}
+
 static void Update() {
+  if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.RightBracket)) {
+    coExecute(getResponse(getMetadata()));
+  }
   if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.LeftBracket)) {
     switch (gfm.CurrentGameState) {
       case DiskCardGame.GameState.CardBattle:
@@ -135,7 +157,7 @@ static void Update() {
           return;
         }
         // TODO: say what comes after each node, so AI can "see" more.
-        var nodeDefs = string.Join("\n", System.Linq.Enumerable.Select(nodes, (n) => $"- {nodeDescription(n)}"));
+        var nodeDefs = string.Join("\n", System.Linq.Enumerable.Select(nodes, (n) => $"- {sNodeData(n)}"));
         coExecute(sendSystemMessage("map summary", $"You are currently on the game map and you have a choice to make. You must choose one of the following nodes:\n{nodeDefs}\nYou must ONLY PICK THE NODE, do NOT specify what exactly to do on it, you will be explicitly asked in next message(s)."));
         return;
       case DiskCardGame.GameState.FirstPerson3D:
