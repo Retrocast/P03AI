@@ -59,6 +59,65 @@ static System.Collections.IEnumerator sendSystemMessage(string displayText, stri
   yield return coDisplayText(_text);
 }
 
+static string nodeDescription(DiskCardGame.NodeData n) {
+  if (n is DiskCardGame.BossBattleNodeData b) {
+    return $"Boss battle node - {b.bossType}BattleSequencer";
+  }
+  if (n is DiskCardGame.BoulderChoiceNodeData) {
+    return "Boulder choice node[Pick one of 3 boulders to hit. One of them contains gold. KEEP GAMBLING]";
+  }
+  if (n is DiskCardGame.BuildTotemNodeData) {
+    return "Woodcarver node[Pick one of 3 totem parts. Once you have at least one top and bottom, build a totem, adding a sigil to all creatures of specific tribe.]";
+  }
+  if (n is DiskCardGame.BuyPeltsNodeData) {
+    return $"Trapper node[Exchange teeth(overkill damage) for Rabbit/Wolf/Golden pelts. You currently have {DiskCardGame.RunState.Run.currency} teeth.]";
+  }
+  if (n is DiskCardGame.TotemBattleNodeData) {
+    return "Totem battle node[Card battle, but all Leshy's creatures of specific tribe will have an additional sigil.]";
+  }
+  if (n is DiskCardGame.CardBattleNodeData) {
+    return "Normal card battle node";
+  }
+  if (n is DiskCardGame.CardChoicesNodeData c) {
+    switch (c.choicesType) {
+      case DiskCardGame.CardChoicesType.Random:
+        return "Card choice node[Pick a card from 3 randomly chosen ones to add to your deck. You may optionally reroll it once with a clover to get another 3 cards.]";
+      case DiskCardGame.CardChoicesType.Cost:
+        return "Cost-based card choice node[Pick a cost from 3 randomly chosen ones and add random card of that cost to your deck. You may optionally reroll costs once with a clover, but you may not reroll the actual card.]";
+      case DiskCardGame.CardChoicesType.Tribe:
+        return "Tribe-based card choice node[Pick a tribe from 3 randomly chosen ones and add random card of that tribe to your deck. You may optionally reroll tribes once with a clover, but you may not reroll the actual card.]";
+      case DiskCardGame.CardChoicesType.Deathcard:
+        return "Deathcard choice node[Pick a deathcard from 3 randomly chosen ones to add to your deck.]";
+    }
+  }
+  if (n is DiskCardGame.CardMergeNodeData) {
+    return "Mysterious stones node[Sacrifice one card, removing it from your deck, and transferring its natural sigils to another card in your deck.]";
+  }
+  if (n is DiskCardGame.CardRemoveNodeData) {
+    return "Bone Lord node[Sacrifice one card, removing it from your deck. Bone Lord will be pleased, if sacrifice is good enough.]";
+  }
+  if (n is DiskCardGame.CardStatBoostNodeData) {
+    return "Campfire node[Increase card's power or health. First time is entirely safe, second time has some risk.]";
+  }
+  if (n is DiskCardGame.CopyCardNodeData) {
+    return "Goobert node[Goobert will draw a copy of chosen card and add it to your deck.]";
+  }
+  if (n is DiskCardGame.DeckTrialNodeData) {
+    return "Deck trial node[Pick one of 3 powerful cards, but only if you pass a trial of choice.]";
+  }
+  if (n is DiskCardGame.DuplicateMergeNodeData) {
+    return "Mycologists node[Mycologists will fuse two of the same cards into one, combining stats of both while keeping price the same. If you have no duplicates, they will offer you one instead.]";
+  }
+  if (n is DiskCardGame.GainConsumablesNodeData) {
+    return "Pack node[Refill your consumable items. If all your item slots are full, receive a Pack Rat card instead.]";
+  }
+  if (n is DiskCardGame.TradePeltsNodeData) {
+    return "Trader node[Exchange pelts you have for cards. If you have no pelts, receive 5 teeth instead.]";
+  }
+  UnityEngine.Debug.LogError($"Unknown node type encountered: {n}");
+  return "Unknown node[Something went wrong. Blame Retrocast.]";
+}
+
 static void Update() {
   if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.LeftBracket)) {
     switch (gfm.CurrentGameState) {
@@ -75,9 +134,8 @@ static void Update() {
           displayText("[c:bR]Only one map node! No need to ask AI about it.[c:]");
           return;
         }
-        // TODO: add node descriptions.
         // TODO: say what comes after each node, so AI can "see" more.
-        var nodeDefs = string.Join("\n", System.Linq.Enumerable.Select(nodes, (n) => $"- {n.GetType().Name}"));
+        var nodeDefs = string.Join("\n", System.Linq.Enumerable.Select(nodes, (n) => $"- {nodeDescription(n)}"));
         coExecute(sendSystemMessage("map summary", $"You are currently on the game map and you have a choice to make. You must choose one of the following nodes:\n{nodeDefs}\nYou must ONLY PICK THE NODE, do NOT specify what exactly to do on it, you will be explicitly asked in next message(s)."));
         return;
       case DiskCardGame.GameState.FirstPerson3D:
