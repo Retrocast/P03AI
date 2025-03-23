@@ -133,6 +133,19 @@ static string sNodeData(DiskCardGame.NodeData n) {
   return "Unknown node[Something went wrong. Blame Retrocast.]";
 }
 
+static string sMap(DiskCardGame.NodeData startNode) {
+  return sNode(startNode, 0);
+}
+static string sNode(DiskCardGame.NodeData node, int depth) {
+  if (depth >= 4) return "";
+  var indent = new string(' ', depth * 2);
+  var summary = depth == 0 ? "→ You're here\n" : indent + "→ " + sNodeData(node) + "\n";
+  foreach (var nextNode in node.connectedNodes) {
+    summary += sNode(nextNode, depth + 1);
+  }
+  return summary;
+}
+
 static string getMetadata() {
   return $"{sDeck()}\n{sConsumables()}\n{sTotems()}";
 }
@@ -147,7 +160,8 @@ static void Update() {
         displayText("Currently in card battle");
         break;
       case DiskCardGame.GameState.Map:
-        var nodes = getMapNode().connectedNodes;
+        var node = getMapNode();
+        var nodes = node.connectedNodes;
         if (nodes.Count == 0) {
           displayText("[c:bR]No map nodes![c:]");
           return;
@@ -156,9 +170,8 @@ static void Update() {
           displayText("[c:bR]Only one map node! No need to ask AI about it.[c:]");
           return;
         }
-        // TODO: say what comes after each node, so AI can "see" more.
         var nodeDefs = string.Join("\n", System.Linq.Enumerable.Select(nodes, (n) => $"- {sNodeData(n)}"));
-        coExecute(sendSystemMessage("map summary", $"You are currently on the game map and you have a choice to make. You must choose one of the following nodes:\n{nodeDefs}\nYou must ONLY PICK THE NODE, do NOT specify what exactly to do on it, you will be explicitly asked in next message(s)."));
+        coExecute(sendSystemMessage("map summary", $"You are currently on the game map and you have a choice to make. Map structure for reference:\n{sMap(node)}\n\nYou must choose one of the following nodes:\n{nodeDefs}\nYou must ONLY PICK THE NODE, do NOT specify what exactly to do on it, you will be explicitly asked in next message(s)."));
         return;
       case DiskCardGame.GameState.FirstPerson3D:
         displayText("[c:bR]Cannot get data from FirstPerson3D![c:]");
