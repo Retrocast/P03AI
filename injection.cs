@@ -5,9 +5,14 @@
 // And thirdly, I have no frickin' clue how to code in C# XD
 // But hey, at least it compiles/works, right?
 
+static System.Collections.IEnumerator coDisplayText(string text) {
+  yield return Singleton<DiskCardGame.TextDisplayer>.Instance.ShowThenClear(text, 1, speaker: DialogueEvent.Speaker.Goo);
+}
+static void coExecute(System.Collections.IEnumerator co) {
+  Singleton<DiskCardGame.TextDisplayer>.Instance.StartCoroutine(co);
+}
 static void displayText(string text) {
-  var td = Singleton<DiskCardGame.TextDisplayer>.Instance;
-  td.StartCoroutine(td.ShowThenClear(text, 1, speaker: DialogueEvent.Speaker.Goo));
+  coExecute(coDisplayText(text));
 }
 static DiskCardGame.GameFlowManager gfm = Singleton<DiskCardGame.GameFlowManager>.Instance;
 static Func<DiskCardGame.NodeData> getMapNode = () => DiskCardGame.RunState.Run.map.nodeData.Find(n => n.id == DiskCardGame.RunState.Run.currentNodeId);
@@ -39,6 +44,21 @@ static string sDeck() {
   return $"Your deck:\n{string.Join("\n", System.Linq.Enumerable.Select(DiskCardGame.RunState.DeckList, c => $"- {sCardInfo(c)}"))}";
 }
 
+static System.Collections.IEnumerator sendSystemMessage(string displayText, string text, string successText="Request sent successfully!")
+{
+  string url = "http://localhost:1337/sendSystemMessage";
+  var www = UnityEngine.Networking.UnityWebRequest.Post(url, $"{displayText}|{text}");
+  yield return www.SendWebRequest();
+  string _text;
+  if (www.isNetworkError || www.isHttpError) {
+    UnityEngine.Debug.LogError(www.error);
+    _text = "[c:bR]Request error, check the console![c:]";
+  } else {
+    _text = successText;
+  }
+  yield return coDisplayText(_text);
+}
+
 static void Update() {
   if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.LeftBracket)) {
     switch (gfm.CurrentGameState) {
@@ -55,7 +75,10 @@ static void Update() {
           displayText("[c:bR]Only one map node! No need to ask AI about it.[c:]");
           return;
         }
-        displayText($"Available next map nodes: {string.Join(", ", System.Linq.Enumerable.Select(nodes, (n) => n.GetType().Name))}");
+        // TODO: add node descriptions.
+        // TODO: say what comes after each node, so AI can "see" more.
+        var nodeDefs = string.Join("\n", System.Linq.Enumerable.Select(nodes, (n) => $"- {n.GetType().Name}"));
+        coExecute(sendSystemMessage("map summary", $"You are currently on the game map and you have a choice to make. You must choose one of the following nodes:\n{nodeDefs}\nYou must ONLY PICK THE NODE, do NOT specify what exactly to do on it, you will be explicitly asked in next message(s)."));
         return;
       case DiskCardGame.GameState.FirstPerson3D:
         displayText("[c:bR]Cannot get data from FirstPerson3D![c:]");
