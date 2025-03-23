@@ -74,6 +74,31 @@ static System.Collections.IEnumerator getResponse(string meta)
   yield return coDisplayText(_text);
 }
 
+static Func<DiskCardGame.SpecialNodeHandler> snh = () => Singleton<DiskCardGame.SpecialNodeHandler>.Instance;
+static string sTotemPiece(DiskCardGame.SelectableItemSlot s) {
+  var data = s.Item.Data;
+  if (data is DiskCardGame.TotemTopData t) {
+    return $"Totem top for tribe {t.prerequisites.tribe}";
+  }
+  if (data is DiskCardGame.TotemBottomData b) {
+    return $"Totem bottom for sigil {sAbilityInfo(b.effectParams.ability)}";
+  }
+  return $"Unknown totem piece. Blame Retrocast. Ask for additional information.";
+}
+static string sWoodcarverEvent() {
+  var seq = snh().buildTotemSequencer;
+  var pieces = string.Join("\n", System.Linq.Enumerable.Select(seq.slots, (s) => $"- {sTotemPiece(s)}"));
+  return $"You are currently at Woodcarver's event, where you pick one of 3 totem pieces. Tops indicate a tribe. Bottoms indicate the sigil that will be added to all cards of that tribe on top. You need at least one top and bottom to build a totem. If you already have a totem, but one of offered pieces will make it even better, pick it and say you want to change the totem. If your current is better than what you can build with current options, just pick the lesser of evils and say you want to keep the current totem.\nTotem pieces you can pick:\n{pieces}";
+}
+
+static string sEvent() {
+  var n = getMapNode();
+  if (n is DiskCardGame.BuildTotemNodeData) {
+    return sWoodcarverEvent();
+  }
+  return null;
+}
+
 static string sNodeData(DiskCardGame.NodeData n) {
   if (n is DiskCardGame.BossBattleNodeData b) {
     return $"Boss battle node - {b.bossType}BattleSequencer";
@@ -177,7 +202,12 @@ static void Update() {
         displayText("[c:bR]Cannot get data from FirstPerson3D![c:]");
         break;
       case DiskCardGame.GameState.SpecialCardSequence:
-        displayText($"SpecialCardSequence: {getMapNode().GetType().Name}");
+        string s = sEvent();
+        if (s == null) {
+          displayText("[c:bR]Summary is not yet implemented for this.[c:]");
+          return;
+        }
+        coExecute(sendSystemMessage($"{getMapNode().GetType().Name} event summary", s));
         break;
     }
   }
