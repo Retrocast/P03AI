@@ -1,100 +1,106 @@
 // Disclaimer: the code is terrible!
-// Firstly, because of how I injected code into the game, I was not able to use `using` statements.
-// That's why I had to fully qualify all type names, making everything overly verbose.
-// Secondly, I did most of the code editing in-game or in Code-OSS without any C# extensions. Basic syntax highlighting is all I had.
-// And thirdly, I have no frickin' clue how to code in C# XD
+// I did most of the code editing in-game or in Code-OSS without any C# extensions. Basic syntax highlighting is all I had.
+// And lastly, I have no frickin' clue how to code in C# XD
 // But hey, at least it compiles/works, right?
 
-static System.Collections.IEnumerator coDisplayText(string text) {
-  yield return Singleton<DiskCardGame.TextDisplayer>.Instance.ShowThenClear(text, 1, speaker: DialogueEvent.Speaker.Goo);
+// Uncomment imports (I have them in the injector, they are here for reference)
+/*
+using System;
+using System.Collections;
+using System.Linq;
+using DiskCardGame;
+*/
+
+static IEnumerator coDisplayText(string text) {
+  yield return Singleton<TextDisplayer>.Instance.ShowThenClear(text, 1, speaker: DialogueEvent.Speaker.Goo);
 }
-static void coExecute(System.Collections.IEnumerator co) {
-  Singleton<DiskCardGame.TextDisplayer>.Instance.StartCoroutine(co);
+static void coExecute(IEnumerator co) {
+  Singleton<TextDisplayer>.Instance.StartCoroutine(co);
 }
 static void displayText(string text) {
   coExecute(coDisplayText(text));
 }
-static DiskCardGame.GameFlowManager gfm = Singleton<DiskCardGame.GameFlowManager>.Instance;
-static Func<DiskCardGame.NodeData> getMapNode = () => DiskCardGame.RunState.Run.map.nodeData.Find(n => n.id == DiskCardGame.RunState.Run.currentNodeId);
+static GameFlowManager gfm = Singleton<GameFlowManager>.Instance;
+static Func<NodeData> getMapNode = () => RunState.Run.map.nodeData.Find(n => n.id == RunState.Run.currentNodeId);
 static string sConsumables() {
-  return $"Consumable items ({DiskCardGame.RunState.Run.consumables.Count}/{DiskCardGame.RunState.Run.MaxConsumables}):\n{DiskCardGame.RunState.Run.consumables.Count == 0 ? "- You have none": string.Join("\n", System.Linq.Enumerable.Select(System.Linq.Enumerable.Select(DiskCardGame.RunState.Run.consumables, x => DiskCardGame.ItemsUtil.GetConsumableByName(x)), x => $"- {x.rulebookName}[{DiskCardGame.RuleBookPage.ParseCardDefinition(x.rulebookDescription)}]"))}";
+  return $"Consumable items ({RunState.Run.consumables.Count}/{RunState.Run.MaxConsumables}):\n{RunState.Run.consumables.Count == 0 ? "- You have none": string.Join("\n", RunState.Run.consumables.Select(x => ItemsUtil.GetConsumableByName(x)).Select(x => $"- {x.rulebookName}[{RuleBookPage.ParseCardDefinition(x.rulebookDescription)}]"))}";
 }
-static string sAbilityInfo(DiskCardGame.Ability a, string c = null) {
-  return $"{DiskCardGame.AbilitiesUtil.GetInfo(a).rulebookName}[{DiskCardGame.RuleBookPage.ParseCardDefinition(DiskCardGame.AbilitiesUtil.GetInfo(a).rulebookDescription).Replace("[creature]", (c ?? "a card bearing this sigil"))}]";
+static string sAbilityInfo(Ability a, string c = null) {
+  return $"{AbilitiesUtil.GetInfo(a).rulebookName}[{RuleBookPage.ParseCardDefinition(AbilitiesUtil.GetInfo(a).rulebookDescription).Replace("[creature]", (c ?? "a card bearing this sigil"))}]";
 }
 static string sTotems() {
-  var totems = DiskCardGame.RunState.Run.totems;
+  var totems = RunState.Run.totems;
   var totem = totems.Count == 0 ? "you don't have one" : $"{totems[0].tribe} tribe creatures get {sAbilityInfo(totems[0].ability)}";
-  var _tops = DiskCardGame.RunState.Run.totemTops;
+  var _tops = RunState.Run.totemTops;
   var tops = _tops.Count == 0 ? "you don't have any" : string.Join(", ", _tops);
-  var _bottoms = DiskCardGame.RunState.Run.totemBottoms;
-  var bottoms = _bottoms.Count == 0 ? "you don't have any" : string.Join(", ", System.Linq.Enumerable.Select(_bottoms, a => sAbilityInfo(a)));
+  var _bottoms = RunState.Run.totemBottoms;
+  var bottoms = _bottoms.Count == 0 ? "you don't have any" : string.Join(", ", _bottoms.Select(a => sAbilityInfo(a)));
   return $"YOUR Current totem (creatures of tribe X get sigil Y): {totem}\n[{_tops.Count}] YOUR totem tops (tribes): {tops}\n[{_bottoms.Count}] YOUR totem bottoms (sigils): {bottoms}";
 }
-static string sCardInfo(DiskCardGame.CardInfo c) {
+static string sCardInfo(CardInfo c) {
 	if (c.name == "!STATIC!GLITCH") return "Static glitch card (turns into random card when drawn)";
   string cost = c.BloodCost == 0 ? (c.BonesCost == 0 ? "free" : $"{c.BonesCost} bone cost") : $"{c.BloodCost} blood cost";
-  string power = c.SpecialStatIcon == DiskCardGame.SpecialStatIcon.None ? $"{c.Attack} power" : "power - " + (string.IsNullOrEmpty(DiskCardGame.StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription) ? DiskCardGame.StatIconInfo.GetIconInfo(c.SpecialStatIcon).rulebookDescription : DiskCardGame.StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription).Replace("[creature]", c.DisplayedNameEnglish);
+  string power = c.SpecialStatIcon == SpecialStatIcon.None ? $"{c.Attack} power" : "power - " + (string.IsNullOrEmpty(StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription) ? StatIconInfo.GetIconInfo(c.SpecialStatIcon).rulebookDescription : StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription).Replace("[creature]", c.DisplayedNameEnglish);
   string tribes = (c.tribes.Count == 0 ? "not part of a" : string.Join(", ", c.tribes)) + " tribe" + (c.tribes.Count > 1 ? "s" : "");
-  string naturalSigils = c.DefaultAbilities.Count == 0 ? "none" : string.Join(", ", System.Linq.Enumerable.Select(c.DefaultAbilities, a => sAbilityInfo(a, c.DisplayedNameEnglish)));
-  string infusedSigils = c.ModAbilities.Count == 0 ? "none" : string.Join(", ", System.Linq.Enumerable.Select(c.ModAbilities, a => sAbilityInfo(a, c.DisplayedNameEnglish)));
+  string naturalSigils = c.DefaultAbilities.Count == 0 ? "none" : string.Join(", ", c.DefaultAbilities.Select(a => sAbilityInfo(a, c.DisplayedNameEnglish)));
+  string infusedSigils = c.ModAbilities.Count == 0 ? "none" : string.Join(", ", c.ModAbilities.Select(a => sAbilityInfo(a, c.DisplayedNameEnglish)));
   return $"{c.DisplayedNameEnglish} ({cost}; {power}; {c.Health} health; {tribes}; natural sigils - {naturalSigils}; infused sigils - {infusedSigils})";
 }
 static string sDeck() {
-  return $"Your deck:\n{string.Join("\n", System.Linq.Enumerable.Select(DiskCardGame.RunState.DeckList, c => $"- {sCardInfo(c)}"))}";
+  return $"Your deck:\n{string.Join("\n", RunState.DeckList.Select(c => $"- {sCardInfo(c)}"))}";
 }
 
-static string sPlayableCard(DiskCardGame.PlayableCard p, bool withCost=false) {
+static string sPlayableCard(PlayableCard p, bool withCost=false) {
   var c = p.Info;
   string cost = (c.BloodCost == 0 ? (c.BonesCost == 0 ? "free" : $"{c.BonesCost} bone cost") : $"{c.BloodCost} blood cost") + "; ";
-  string naturalSigils = c.DefaultAbilities.Count == 0 ? "none" : string.Join(", ", System.Linq.Enumerable.Select(c.DefaultAbilities, a => sAbilityInfo(a, c.DisplayedNameEnglish)));
-  string infusedSigils = c.ModAbilities.Count == 0 ? "" : "; infused sigils - " + string.Join(", ", System.Linq.Enumerable.Select(c.ModAbilities, a => sAbilityInfo(a, c.DisplayedNameEnglish)));
-  var _tempSigils = new List<DiskCardGame.Ability>();
+  string naturalSigils = c.DefaultAbilities.Count == 0 ? "none" : string.Join(", ", c.DefaultAbilities.Select(a => sAbilityInfo(a, c.DisplayedNameEnglish)));
+  string infusedSigils = c.ModAbilities.Count == 0 ? "" : "; infused sigils - " + string.Join(", ", c.ModAbilities.Select(a => sAbilityInfo(a, c.DisplayedNameEnglish)));
+  var _tempSigils = new List<Ability>();
   foreach (var mod in p.TemporaryMods) {
     foreach (var ability in mod.abilities) {
       _tempSigils.Add(ability);
     }
   }
-  string tempSigils = _tempSigils.Count == 0 ? "" : "; temporary sigils(from totems/buffs/etc) - " + string.Join(", ", System.Linq.Enumerable.Select(_tempSigils, a => sAbilityInfo(a, c.DisplayedNameEnglish)));
-  return $"{c.DisplayedNameEnglish} ({withCost ? cost : ""}{p.Attack} power{c.SpecialStatIcon == DiskCardGame.SpecialStatIcon.None ? "" : "[" + (string.IsNullOrEmpty(DiskCardGame.StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription) ? DiskCardGame.StatIconInfo.GetIconInfo(c.SpecialStatIcon).rulebookDescription : DiskCardGame.StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription).Replace("[creature]", c.DisplayedNameEnglish) + "]"}; {p.Health} health; natural sigils - {naturalSigils}{infusedSigils}{tempSigils})";
+  string tempSigils = _tempSigils.Count == 0 ? "" : "; temporary sigils(from totems/buffs/etc) - " + string.Join(", ", _tempSigils.Select(a => sAbilityInfo(a, c.DisplayedNameEnglish)));
+  return $"{c.DisplayedNameEnglish} ({withCost ? cost : ""}{p.Attack} power{c.SpecialStatIcon == SpecialStatIcon.None ? "" : "[" + (string.IsNullOrEmpty(StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription) ? StatIconInfo.GetIconInfo(c.SpecialStatIcon).rulebookDescription : StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription).Replace("[creature]", c.DisplayedNameEnglish) + "]"}; {p.Health} health; natural sigils - {naturalSigils}{infusedSigils}{tempSigils})";
 }
 
 static string sHand() {
-  return $"Your hand:\n{string.Join("\n", System.Linq.Enumerable.Select(Singleton<DiskCardGame.PlayerHand>.Instance.CardsInHand, p => $"- {sPlayableCard(p, true)}"))}";
+  return $"Your hand:\n{string.Join("\n", Singleton<PlayerHand>.Instance.CardsInHand.Select(p => $"- {sPlayableCard(p, true)}"))}";
 }
 
 static string sBoardPlayerSide() {
-  var bm = Singleton<DiskCardGame.BoardManager>.Instance;
+  var bm = Singleton<BoardManager>.Instance;
   if (bm.PlayerSlotsCopy.Find(s => s.Card != null) == null) {
     return "Your side of the board is completely empty";
   }
-  return $"Your side of the board:\n{string.Join("\n", System.Linq.Enumerable.Select(bm.PlayerSlotsCopy, s => s.Card == null ? "- Empty" : $"- {sPlayableCard(s.Card)}"))}";
+  return $"Your side of the board:\n{string.Join("\n", bm.PlayerSlotsCopy.Select(s => s.Card == null ? "- Empty" : $"- {sPlayableCard(s.Card)}"))}";
 }
 
-static string sCardInSlot(DiskCardGame.PlayableCard p) {
+static string sCardInSlot(PlayableCard p) {
   return p == null ? "- Empty" : $"- {sPlayableCard(p)}";
 }
 
 static string sBoardLeshySide() {
-  var bm = Singleton<DiskCardGame.BoardManager>.Instance;
-  var moonSlot = bm.OpponentSlotsCopy.Find(x => x.Card != null && x.Card.Info.HasTrait(DiskCardGame.Trait.Giant));
+  var bm = Singleton<BoardManager>.Instance;
+  var moonSlot = bm.OpponentSlotsCopy.Find(x => x.Card != null && x.Card.Info.HasTrait(Trait.Giant));
   if (moonSlot != null) {
     return $"Leshy's side of the board contains a single giant card that takes all 4 lanes - {sPlayableCard(moonSlot.Card)}";
   }
-  var q = Singleton<DiskCardGame.TurnManager>.Instance.Opponent.Queue;
+  var q = Singleton<TurnManager>.Instance.Opponent.Queue;
   var queue = "Leshy's queue is completely empty";
   if (q.Count > 0) {
     queue = $"Leshy's queue:\n{sCardInSlot(q.Find(x => x.QueuedSlot.Index == 0))}\n{sCardInSlot(q.Find(x => x.QueuedSlot.Index == 1))}\n{sCardInSlot(q.Find(x => x.QueuedSlot.Index == 2))}\n{sCardInSlot(q.Find(x => x.QueuedSlot.Index == 3))}";
   }
   var board = "Leshy's side of the board is completely empty";
   if (bm.OpponentSlotsCopy.Find(s => s.Card != null) != null) {
-    board = $"Leshy's side of the board:\n{string.Join("\n", System.Linq.Enumerable.Select(Singleton<DiskCardGame.BoardManager>.Instance.OpponentSlotsCopy, s => sCardInSlot(s.Card)))}";
+    board = $"Leshy's side of the board:\n{string.Join("\n", Singleton<BoardManager>.Instance.OpponentSlotsCopy.Select(s => sCardInSlot(s.Card)))}";
   }
   return $"{queue}\n{board}";
 }
 
 static string sScales() {
-  var b = Singleton<DiskCardGame.LifeManager>.Instance.Balance;
+  var b = Singleton<LifeManager>.Instance.Balance;
   var i = $"Scales balance - {b}";
   if (b == 0) return i;
   if (b >= 5 || b <= -5) return $"{i} ({b > 0 ? "you" : "Leshy"} won)";
@@ -106,13 +112,13 @@ static string sScales() {
 }
 
 static string sOpponent() {
-  var _o = Singleton<DiskCardGame.TurnManager>.Instance.Opponent;
+  var _o = Singleton<TurnManager>.Instance.Opponent;
   var name = _o.GetType().Name;
   if (name == "Part1Opponent") {
     name = "NormalOpponent";
   }
   var totem = "no totem";
-  if (_o is DiskCardGame.Part1Opponent o) {
+  if (_o is Part1Opponent o) {
     if (o.totem != null) {
       totem = $"totem that inscribes {sAbilityInfo(o.totem.TotemItemData.bottom.effectParams.ability)} sigil onto all Leshy's cards of tribe {o.totem.TotemItemData.top.prerequisites.tribe}";
     }
@@ -121,10 +127,10 @@ static string sOpponent() {
 }
 
 static string sBattle() {
-  return $"{sOpponent()}\nTurn #{Singleton<DiskCardGame.TurnManager>.Instance.TurnNumber}\n{sScales()}\n{sBoardLeshySide()}\n{sBoardPlayerSide()}\n{sHand()}";
+  return $"{sOpponent()}\nTurn #{Singleton<TurnManager>.Instance.TurnNumber}\n{sScales()}\n{sBoardLeshySide()}\n{sBoardPlayerSide()}\n{sHand()}";
 }
 
-static System.Collections.IEnumerator sendSystemMessage(string displayText, string text, string successText="Request sent successfully!")
+static IEnumerator sendSystemMessage(string displayText, string text, string successText="Request sent successfully!")
 {
   string url = "http://localhost:1337/sendSystemMessage";
   var www = UnityEngine.Networking.UnityWebRequest.Post(url, $"{displayText}|{text}");
@@ -139,7 +145,7 @@ static System.Collections.IEnumerator sendSystemMessage(string displayText, stri
   yield return coDisplayText(_text);
 }
 
-static System.Collections.IEnumerator getResponse(string meta)
+static IEnumerator getResponse(string meta)
 {
   string url = "http://localhost:1337/getResponse";
   var www = UnityEngine.Networking.UnityWebRequest.Post(url, meta);
@@ -154,98 +160,98 @@ static System.Collections.IEnumerator getResponse(string meta)
   yield return coDisplayText(_text);
 }
 
-static Func<DiskCardGame.SpecialNodeHandler> snh = () => Singleton<DiskCardGame.SpecialNodeHandler>.Instance;
-static string sTotemPiece(DiskCardGame.SelectableItemSlot s) {
+static Func<SpecialNodeHandler> snh = () => Singleton<SpecialNodeHandler>.Instance;
+static string sTotemPiece(SelectableItemSlot s) {
   var data = s.Item.Data;
-  if (data is DiskCardGame.TotemTopData t) {
+  if (data is TotemTopData t) {
     return $"Totem top for tribe {t.prerequisites.tribe}";
   }
-  if (data is DiskCardGame.TotemBottomData b) {
+  if (data is TotemBottomData b) {
     return $"Totem bottom for sigil {sAbilityInfo(b.effectParams.ability)}";
   }
   return $"Unknown totem piece. Blame Retrocast. Ask for additional information.";
 }
 static string sWoodcarverEvent() {
   var seq = snh().buildTotemSequencer;
-  if (seq.GetFirstEmptyInventorySlot() == null || (DiskCardGame.RunState.Run.totemTops.Count+DiskCardGame.RunState.Run.totemBottoms.Count) >= 7) {
-    var amalgam = seq.gameObject.GetComponentInChildren<DiskCardGame.SelectableCard>().Info;
+  if (seq.GetFirstEmptyInventorySlot() == null || (RunState.Run.totemTops.Count+RunState.Run.totemBottoms.Count) >= 7) {
+    var amalgam = seq.gameObject.GetComponentInChildren<SelectableCard>().Info;
     return $"A look of regret fell over the old woodcarver. You were overburdened with totem pieces and you could carry no more.\nShe gestured toward a disturbing creature lurking nearby.\n{sCardInfo(amalgam)} was added to your deck.\nCanine. Hooved. Reptile. Bird. Insect. The Amalgam is all.";
   }
-  var pieces = string.Join("\n", System.Linq.Enumerable.Select(seq.slots, (s) => $"- {sTotemPiece(s)}"));
+  var pieces = string.Join("\n", seq.slots.Select(s => $"- {sTotemPiece(s)}"));
   return $"You are currently at Woodcarver's event, where you pick one of 3 totem pieces. Tops indicate a tribe. Bottoms indicate the sigil that will be added to all cards of that tribe on top. You need at least one top and bottom to build a totem. If you already have a totem, but one of offered pieces will make it even better, pick it and say you want to change the totem. If your current is better than what you can build with current options, just pick the lesser of evils and say you want to keep the current totem.\nTotem pieces you can pick:\n{pieces}";
 }
 
 static string sEvent() {
   var n = getMapNode();
-  if (n is DiskCardGame.BuildTotemNodeData) {
+  if (n is BuildTotemNodeData) {
     return sWoodcarverEvent();
   }
   return null;
 }
 
-static string sNodeData(DiskCardGame.NodeData n) {
-  if (n is DiskCardGame.BossBattleNodeData b) {
+static string sNodeData(NodeData n) {
+  if (n is BossBattleNodeData b) {
     return $"Boss battle node - {b.bossType}BattleSequencer";
   }
-  if (n is DiskCardGame.BoulderChoiceNodeData) {
+  if (n is BoulderChoiceNodeData) {
     return "Boulder choice node[Pick one of 3 boulders to hit. One of them contains gold. KEEP GAMBLING]";
   }
-  if (n is DiskCardGame.BuildTotemNodeData) {
+  if (n is BuildTotemNodeData) {
     return "Woodcarver node[Pick one of 3 totem parts. Once you have at least one top and bottom, build a totem, adding a sigil to all creatures of specific tribe.]";
   }
-  if (n is DiskCardGame.BuyPeltsNodeData) {
-    return $"Trapper node[Exchange teeth(overkill damage) for Rabbit/Wolf/Golden pelts. You currently have {DiskCardGame.RunState.Run.currency} teeth.]";
+  if (n is BuyPeltsNodeData) {
+    return $"Trapper node[Exchange teeth(overkill damage) for Rabbit/Wolf/Golden pelts. You currently have {RunState.Run.currency} teeth.]";
   }
-  if (n is DiskCardGame.TotemBattleNodeData) {
+  if (n is TotemBattleNodeData) {
     return "Totem battle node[Card battle, but all Leshy's creatures of specific tribe will have an additional sigil.]";
   }
-  if (n is DiskCardGame.CardBattleNodeData) {
+  if (n is CardBattleNodeData) {
     return "Normal card battle node";
   }
-  if (n is DiskCardGame.CardChoicesNodeData c) {
+  if (n is CardChoicesNodeData c) {
     switch (c.choicesType) {
-      case DiskCardGame.CardChoicesType.Random:
+      case CardChoicesType.Random:
         return "Card choice node[Pick a card from 3 randomly chosen ones to add to your deck. You may optionally reroll it once with a clover to get another 3 cards.]";
-      case DiskCardGame.CardChoicesType.Cost:
+      case CardChoicesType.Cost:
         return "Cost-based card choice node[Pick a cost from 3 randomly chosen ones and add random card of that cost to your deck. You may optionally reroll costs once with a clover, but you may not reroll the actual card.]";
-      case DiskCardGame.CardChoicesType.Tribe:
+      case CardChoicesType.Tribe:
         return "Tribe-based card choice node[Pick a tribe from 3 randomly chosen ones and add random card of that tribe to your deck. You may optionally reroll tribes once with a clover, but you may not reroll the actual card.]";
-      case DiskCardGame.CardChoicesType.Deathcard:
+      case CardChoicesType.Deathcard:
         return "Deathcard choice node[Pick a deathcard from 3 randomly chosen ones to add to your deck.]";
     }
   }
-  if (n is DiskCardGame.CardMergeNodeData) {
+  if (n is CardMergeNodeData) {
     return "Mysterious stones node[Sacrifice one card, removing it from your deck, and transferring its natural sigils to another card in your deck.]";
   }
-  if (n is DiskCardGame.CardRemoveNodeData) {
+  if (n is CardRemoveNodeData) {
     return "Bone Lord node[Sacrifice one card, removing it from your deck. Bone Lord will be pleased, if sacrifice is good enough.]";
   }
-  if (n is DiskCardGame.CardStatBoostNodeData) {
+  if (n is CardStatBoostNodeData) {
     return "Campfire node[Increase card's power or health. First time is entirely safe, second time has some risk.]";
   }
-  if (n is DiskCardGame.CopyCardNodeData) {
+  if (n is CopyCardNodeData) {
     return "Goobert node[Goobert will draw a copy of chosen card and add it to your deck.]";
   }
-  if (n is DiskCardGame.DeckTrialNodeData) {
+  if (n is DeckTrialNodeData) {
     return "Deck trial node[Pick one of 3 powerful cards, but only if you pass a trial of choice.]";
   }
-  if (n is DiskCardGame.DuplicateMergeNodeData) {
+  if (n is DuplicateMergeNodeData) {
     return "Mycologists node[Mycologists will fuse two of the same cards into one, combining stats of both while keeping price the same. If you have no duplicates, they will offer you one instead.]";
   }
-  if (n is DiskCardGame.GainConsumablesNodeData) {
+  if (n is GainConsumablesNodeData) {
     return "Pack node[Refill your consumable items. If all your item slots are full, receive a Pack Rat card instead.]";
   }
-  if (n is DiskCardGame.TradePeltsNodeData) {
+  if (n is TradePeltsNodeData) {
     return "Trader node[Exchange pelts you have for cards. If you have no pelts, receive 5 teeth instead.]";
   }
   UnityEngine.Debug.LogError($"Unknown node type encountered: {n}");
   return "Unknown node[Something went wrong. Blame Retrocast.]";
 }
 
-static string sMap(DiskCardGame.NodeData startNode) {
+static string sMap(NodeData startNode) {
   return sNode(startNode, 0);
 }
-static string sNode(DiskCardGame.NodeData node, int depth) {
+static string sNode(NodeData node, int depth) {
   if (depth >= 4) return "";
   var indent = new string(' ', depth * 2);
   var summary = depth == 0 ? "→ You're here\n" : indent + "→ " + sNodeData(node) + "\n";
@@ -265,10 +271,10 @@ static void Update() {
   }
   if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.LeftBracket)) {
     switch (gfm.CurrentGameState) {
-      case DiskCardGame.GameState.CardBattle:
+      case GameState.CardBattle:
         coExecute(sendSystemMessage("battle summary", sBattle()));
         break;
-      case DiskCardGame.GameState.Map:
+      case GameState.Map:
         var node = getMapNode();
         var nodes = node.connectedNodes;
         if (nodes.Count == 0) {
@@ -279,13 +285,13 @@ static void Update() {
           displayText("[c:bR]Only one map node! No need to ask AI about it.[c:]");
           return;
         }
-        var nodeDefs = string.Join("\n", System.Linq.Enumerable.Select(nodes, (n) => $"- {sNodeData(n)}"));
+        var nodeDefs = string.Join("\n", nodes.Select(n => $"- {sNodeData(n)}"));
         coExecute(sendSystemMessage("map summary", $"You are currently on the game map and you have a choice to make. Map structure for reference:\n{sMap(node)}\n\nYou must choose one of the following nodes:\n{nodeDefs}\nYou must ONLY PICK THE NODE, do NOT specify what exactly to do on it, you will be explicitly asked in next message(s)."));
         return;
-      case DiskCardGame.GameState.FirstPerson3D:
+      case GameState.FirstPerson3D:
         displayText("[c:bR]Cannot get data from FirstPerson3D![c:]");
         break;
-      case DiskCardGame.GameState.SpecialCardSequence:
+      case GameState.SpecialCardSequence:
         string s = sEvent();
         if (s == null) {
           displayText("[c:bR]Summary is not yet implemented for this.[c:]");
@@ -300,12 +306,10 @@ static void Update() {
 // The thingy that actually calls the Update as patch for ManagedUpdate of OilPaintingPuzzle and wraps it in try/catch.
 // Seems like a good candidate, since it is always present in cabin in single instance.
 // In case it causes any issues, it can be moved to any other single/global object's Update/ManagedUpdate.
-static void Postfix(DiskCardGame.OilPaintingPuzzle __instance)
-{
+static void Postfix(OilPaintingPuzzle __instance) {
   try {
     Update();
-  }
-  catch (System.Exception ex) {
+  } catch (System.Exception ex) {
     UnityEngine.Debug.LogError($"Congrats, Retrocast, you fucked up!\n{ex}");
   }
 }
