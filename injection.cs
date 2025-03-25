@@ -44,6 +44,86 @@ static string sDeck() {
   return $"Your deck:\n{string.Join("\n", System.Linq.Enumerable.Select(DiskCardGame.RunState.DeckList, c => $"- {sCardInfo(c)}"))}";
 }
 
+static string sPlayableCard(DiskCardGame.PlayableCard p, bool withCost=false) {
+  var c = p.Info;
+  string cost = (c.BloodCost == 0 ? (c.BonesCost == 0 ? "free" : $"{c.BonesCost} bone cost") : $"{c.BloodCost} blood cost") + "; ";
+  string naturalSigils = c.DefaultAbilities.Count == 0 ? "none" : string.Join(", ", System.Linq.Enumerable.Select(c.DefaultAbilities, a => sAbilityInfo(a, c.DisplayedNameEnglish)));
+  string infusedSigils = c.ModAbilities.Count == 0 ? "" : "; infused sigils - " + string.Join(", ", System.Linq.Enumerable.Select(c.ModAbilities, a => sAbilityInfo(a, c.DisplayedNameEnglish)));
+  var _tempSigils = new List<DiskCardGame.Ability>();
+  foreach (var mod in p.TemporaryMods) {
+    foreach (var ability in mod.abilities) {
+      _tempSigils.Add(ability);
+    }
+  }
+  string tempSigils = _tempSigils.Count == 0 ? "" : "; temporary sigils(from totems/buffs/etc) - " + string.Join(", ", System.Linq.Enumerable.Select(_tempSigils, a => sAbilityInfo(a, c.DisplayedNameEnglish)));
+  return $"{c.DisplayedNameEnglish} ({withCost ? cost : ""}{p.Attack} power{c.SpecialStatIcon == DiskCardGame.SpecialStatIcon.None ? "" : "[" + (string.IsNullOrEmpty(DiskCardGame.StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription) ? DiskCardGame.StatIconInfo.GetIconInfo(c.SpecialStatIcon).rulebookDescription : DiskCardGame.StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription).Replace("[creature]", c.DisplayedNameEnglish) + "]"}; {p.Health} health; natural sigils - {naturalSigils}{infusedSigils}{tempSigils})";
+}
+
+static string sHand() {
+  return $"Your hand:\n{string.Join("\n", System.Linq.Enumerable.Select(Singleton<DiskCardGame.PlayerHand>.Instance.CardsInHand, p => $"- {sPlayableCard(p, true)}"))}";
+}
+
+static string sBoardPlayerSide() {
+  var bm = Singleton<DiskCardGame.BoardManager>.Instance;
+  if (bm.PlayerSlotsCopy.Find(s => s.Card != null) == null) {
+    return "Your side of the board is completely empty";
+  }
+  return $"Your side of the board:\n{string.Join("\n", System.Linq.Enumerable.Select(bm.PlayerSlotsCopy, s => s.Card == null ? "- Empty" : $"- {sPlayableCard(s.Card)}"))}";
+}
+
+static string sCardInSlot(DiskCardGame.PlayableCard p) {
+  return p == null ? "- Empty" : $"- {sPlayableCard(p)}";
+}
+
+static string sBoardLeshySide() {
+  var bm = Singleton<DiskCardGame.BoardManager>.Instance;
+  var moonSlot = bm.OpponentSlotsCopy.Find(x => x.Card != null && x.Card.Info.HasTrait(DiskCardGame.Trait.Giant));
+  if (moonSlot != null) {
+    return $"Leshy's side of the board contains a single giant card that takes all 4 lanes - {sPlayableCard(moonSlot.Card)}";
+  }
+  var q = Singleton<DiskCardGame.TurnManager>.Instance.Opponent.Queue;
+  var queue = "Leshy's queue is completely empty";
+  if (q.Count > 0) {
+    queue = $"Leshy's queue:\n{sCardInSlot(q.Find(x => x.QueuedSlot.Index == 0))}\n{sCardInSlot(q.Find(x => x.QueuedSlot.Index == 1))}\n{sCardInSlot(q.Find(x => x.QueuedSlot.Index == 2))}\n{sCardInSlot(q.Find(x => x.QueuedSlot.Index == 3))}";
+  }
+  var board = "Leshy's side of the board is completely empty";
+  if (bm.OpponentSlotsCopy.Find(s => s.Card != null) != null) {
+    board = $"Leshy's side of the board:\n{string.Join("\n", System.Linq.Enumerable.Select(Singleton<DiskCardGame.BoardManager>.Instance.OpponentSlotsCopy, s => sCardInSlot(s.Card)))}";
+  }
+  return $"{queue}\n{board}";
+}
+
+static string sScales() {
+  var b = Singleton<DiskCardGame.LifeManager>.Instance.Balance;
+  var i = $"Scales balance - {b}";
+  if (b == 0) return i;
+  if (b >= 5 || b <= -5) return $"{i} ({b > 0 ? "you" : "Leshy"} won)";
+  if (b > 0) {
+    return $"{i} ({5 - b} damage until you win)";
+  } else {
+    return $"{i} ({5 + b} damage until Leshy wins)";
+  }
+}
+
+static string sOpponent() {
+  var _o = Singleton<DiskCardGame.TurnManager>.Instance.Opponent;
+  var name = _o.GetType().Name;
+  if (name == "Part1Opponent") {
+    name = "NormalOpponent";
+  }
+  var totem = "no totem";
+  if (_o is DiskCardGame.Part1Opponent o) {
+    if (o.totem != null) {
+      totem = $"totem that inscribes {sAbilityInfo(o.totem.TotemItemData.bottom.effectParams.ability)} sigil onto all Leshy's cards of tribe {o.totem.TotemItemData.top.prerequisites.tribe}";
+    }
+  }
+  return $"Currently in battle with [{name}] w/ {totem}";
+}
+
+static string sBattle() {
+  return $"{sOpponent()}\nTurn #{Singleton<DiskCardGame.TurnManager>.Instance.TurnNumber}\n{sScales()}\n{sBoardLeshySide()}\n{sBoardPlayerSide()}\n{sHand()}";
+}
+
 static System.Collections.IEnumerator sendSystemMessage(string displayText, string text, string successText="Request sent successfully!")
 {
   string url = "http://localhost:1337/sendSystemMessage";
@@ -186,7 +266,7 @@ static void Update() {
   if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.LeftBracket)) {
     switch (gfm.CurrentGameState) {
       case DiskCardGame.GameState.CardBattle:
-        displayText("Currently in card battle");
+        coExecute(sendSystemMessage("battle summary", sBattle()));
         break;
       case DiskCardGame.GameState.Map:
         var node = getMapNode();
