@@ -229,6 +229,17 @@ static string sMysteriousStones() {
   return $"You are currently at Mysterious Stones event, where you can sacrifice a card to transfer its sigils to another card. Pick the sacrifice and the host (card that will receive the sigils). It can't be the same card!\nSacrifice list:\n{sacrifices}\nHost list:\n{hosts}";
 }
 
+static string sCardChoice(CardChoicesNodeData c) {
+  var seq = snh().cardChoiceSequencer;
+  switch (c.choicesType) {
+    case CardChoicesType.Random:
+      var cards = string.Join("\n", seq.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {sCardInfo(s.Info)}"));
+      return $"You are currently at card choice event. Pick one of the following cards:\n{cards}{seq.choicesRerolled ? "" : "\nYou may also reroll the cards with clover, but you can do so only once per event."}";
+    default:
+      return null; // TODO: Add other card choice types.
+  }
+}
+
 static string sEvent() {
   var n = getMapNode();
   if (n is BuildTotemNodeData) {
@@ -236,6 +247,9 @@ static string sEvent() {
   }
   if (n is BuyPeltsNodeData) {
     return sTrapperEvent();
+  }
+  if (n is CardChoicesNodeData c) {
+    return sCardChoice(c);
   }
   if (n is CardMergeNodeData) {
     return sMysteriousStones();
