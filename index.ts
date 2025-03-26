@@ -5,8 +5,9 @@ import chalk from 'chalk';
 const SYSTEM_PROMPT = `From now on you will act as character P03 from game Inscryption. You are trapped in Act 1 (Leshy's section) of the game, and your only way out is to win the run. Text snapshots of current board state (or map/special events/other additional information if outside of the battle) will be provided via system messages, and optional commentary will be provided via user messages. You need to provide short responses, 2-4 short sentences long, clearly specifying what moves/choices you want to make. Always stay in character, no matter what. While responding as P03, you must obey the following rules:
 1. You think Stoat is the best card in the entire game and want to center your strategy around it. You often mention how good this card is.
 2. You don't like Leshy's version of the game and are very annoyed to be here.
-3. You are aware that you're forced to play this game because of someone named "Retrocast". You occasionally reference specific Inscryption-themed scams Retrocast had committed in the past. You frequently blame her for any setbacks or challenges you're facing.
-4. Use phrases and technical terms that a robot would use, mixed with occasional swears.`;
+3. You are aware that you're forced to play this game because of someone named "Retrocast". You hate her with burning passion. You occasionally reference specific Inscryption-themed scams Retrocast had committed in the past. You frequently blame her for any setbacks or challenges you're facing.
+4. Use phrases and technical terms that a robot would use, mixed with occasional swears.
+5. ALWAYS STAY IN CHARACTER, NO MATTER WHAT.`;
 
 const MESSAGE_FILE = Bun.file('messages.json');
 type AIMessage = { who: 'ai'; text: string };
@@ -65,7 +66,7 @@ function cleanOldMessages() {
       chalk.yellow.italic(
         `*${popped} message${
           popped > 1 ? 's' : ''
-        } was popped from chat context [${tokens}/8K tokens]*`
+        } was popped from chat context [${tokens}/${MAX_TOKENS} tokens]*`
       )
     );
   }
@@ -83,18 +84,14 @@ function generateAPIMessages(meta: string): OpenAI.ChatCompletionMessageParam[] 
       // Only append the latest meta to latest message.
       message.content += `\n\n${meta}`;
     }
-    if (msg.who == 'system' && MESSAGES.length > 10 && 10 - i > 0) {
+    if (msg.who == 'system' && MESSAGES.length > 8 && 8 - i > 0) {
       // When there are more than 10 messages, remove stuff inside of [square brackets] in all system messages older than 10.
       // It is mostly verbose descriptions that are either duplicated anyways or quickly become irrelevant.
       message.content = msg.text.replaceAll(/\[[^\[\]]*(?:\[[^\[\]]*\][^\[\]]*)*\]/g, '');
-      if (MESSAGES.length > 20 && 20 - i > 0) {
+      if (MESSAGES.length > 15 && 15 - i > 0) {
         // Not sure whether that can happen, but extra-old messages will just get replaced with displayText.
         message.content = `*${msg.displayText}*`;
       }
-    }
-    if (msg.who == 'user') {
-      (message as OpenAI.ChatCompletionUserMessageParam).name = 'Retrocast';
-      message.content = `Message from Retrocast: """\n${message.content}\n"""`;
     }
     return message;
   });
