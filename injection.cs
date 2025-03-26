@@ -240,6 +240,13 @@ static string sCardChoice(CardChoicesNodeData c) {
   }
 }
 
+static string sCampfire() {
+  var seq = snh().cardStatBoostSequencer;
+  var isAttack = seq.selectionSlot.specificRenderers[0].material.mainTexture == seq.attackModSlotTexture;
+  var cards = string.Join("\n", seq.GetValidCards(isAttack).Select(c => $"- {sCardInfo(c)}"));
+  return $"You are currently at Campfire event. Pick one of the following cards:\n{cards}\nCampfire will increase its {isAttack ? "Power by 1" : "Health by 2"}.\n{RunState.Run.survivorsDead ? "Since survivors are dead, you can upgrade second time without any risk!" : "You may also upgrade for second time, but it has 50% risk to lose your card."}";
+}
+
 static string sEvent() {
   var n = getMapNode();
   if (n is BuildTotemNodeData) {
@@ -253,6 +260,9 @@ static string sEvent() {
   }
   if (n is CardMergeNodeData) {
     return sMysteriousStones();
+  }
+  if (n is CardStatBoostNodeData) {
+    return sCampfire();
   }
   if (n is GainConsumablesNodeData) {
     return sPackEvent();
