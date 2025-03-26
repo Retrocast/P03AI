@@ -252,6 +252,16 @@ static string sBossRares() {
   return $"As a reward for beating a boss, pick one of the following cards:\n{cards}";
 }
 
+static string sDeckTrial() {
+  var seq = snh().deckTrialSequencer;
+  var cards = seq.transform.Find("TrialCardsAnchor").GetComponentsInChildren<SelectableCard>().Where(s => s.transform.parent.gameObject.name != "DrawnCardsAnchor");
+  if ((new List<SelectableCard>(cards)).Find(s => s.Info != null && s.Info.metaCategories.Contains(CardMetaCategory.ChoiceNode)) != null) {
+    return $"Pick your reward:\n{string.Join("\n", cards.Select(s => $"- {sCardInfo(s.Info)}"))}";
+  }
+  var trials = string.Join("\n", seq.trialChoices.Select(t => $"- Trial of {t.GetTypeStringLocalized()}[{t.description}]"));
+  return $"You are currently at Deck Trial event. Pick one of the trials, and if you pass it, you'll get to add a powerful card to your deck:\n{trials}";
+}
+
 static string sEvent() {
   var n = getMapNode();
   if (n is BossBattleNodeData) {
@@ -271,6 +281,9 @@ static string sEvent() {
   }
   if (n is CardStatBoostNodeData) {
     return sCampfire();
+  }
+  if (n is DeckTrialNodeData) {
+    return sDeckTrial();
   }
   if (n is GainConsumablesNodeData) {
     return sPackEvent();
