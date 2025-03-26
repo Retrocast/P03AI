@@ -217,6 +217,11 @@ static string sPackEvent() {
   return $"You are currently at Pack event. Chose ONE of the following items:\n{items}{more > 0 ? $"\nYou will be asked {more} more time(s) with different items in next message(s)." : ""}";
 }
 
+static string sTrader() {
+  var seq = snh().tradePeltsSequencer;
+  return $"You are currently at Trader's event, where you can exchange your pelts for cards. Choose {seq.peltCards.Count} cards from the following:\n{string.Join("\n", seq.tradeCards.Select(s => $"- {sCardInfo(s.Info)}"))}";
+}
+
 static string sEvent() {
   var n = getMapNode();
   if (n is BuildTotemNodeData) {
@@ -227,6 +232,9 @@ static string sEvent() {
   }
   if (n is GainConsumablesNodeData) {
     return sPackEvent();
+  }
+  if (n is TradePeltsNodeData) {
+    return sTrader();
   }
   return null;
 }
