@@ -262,6 +262,16 @@ static string sDeckTrial() {
   return $"You are currently at Deck Trial event. Pick one of the trials, and if you pass it, you'll get to add a powerful card to your deck:\n{trials}";
 }
 
+static string sMycologists() {
+  var seq = snh().duplicateMerger;
+  if (seq.GetValidDuplicateCards().Count == 0) {
+    var cards = string.Join("\n", seq.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {sCardInfo(s.Info)}"));
+    return $"You are currently at the Mycologists' event. They would usually merge duplicate cards into more powerful single card, but you have none. So, they offered you to take one of their cards instead. Choose one:\n{cards}";
+  }
+  var pairs = string.Join("\n", (seq.selectionSlot.cardSelector as SelectableCardPairArray).pairs.Select(p => $"Combine {sCardInfo(p.LeftCard.Info)} + {sCardInfo(p.RightCard.Info)}"));
+  return $"You are currently at the Mycologists' event. They will merge duplicate cards from your deck into more powerful single card while keeping price the same. Pick a pair:\n{pairs}";
+}
+
 static string sEvent() {
   var n = getMapNode();
   if (n is BossBattleNodeData) {
@@ -284,6 +294,9 @@ static string sEvent() {
   }
   if (n is DeckTrialNodeData) {
     return sDeckTrial();
+  }
+  if (n is DuplicateMergeNodeData) {
+    return sMycologists();
   }
   if (n is GainConsumablesNodeData) {
     return sPackEvent();
