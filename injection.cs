@@ -233,7 +233,7 @@ static string sCardChoice(CardChoicesNodeData c) {
   var seq = snh().cardChoiceSequencer;
   switch (c.choicesType) {
     case CardChoicesType.Random:
-      var cards = string.Join("\n", seq.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {sCardInfo(s.Info)}"));
+      var cards = string.Join("\n", seq.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {sCardInfo(s.Info, true)}"));
       return $"You are currently at card choice event. Pick one of the following cards:\n{cards}{seq.choicesRerolled ? "" : "\nYou may also reroll the cards with clover, but you can do so only once per event."}";
     default:
       return null; // TODO: Add other card choice types.
@@ -248,7 +248,7 @@ static string sCampfire() {
 }
 
 static string sBossRares() {
-  var cards = string.Join("\n", snh().rareCardChoiceSequencer.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {sCardInfo(s.Info)}"));
+  var cards = string.Join("\n", snh().rareCardChoiceSequencer.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {sCardInfo(s.Info, true)}"));
   return $"As a reward for beating a boss, pick one of the following cards:\n{cards}";
 }
 
