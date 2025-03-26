@@ -231,10 +231,17 @@ static string sMysteriousStones() {
 
 static string sCardChoice(CardChoicesNodeData c) {
   var seq = snh().cardChoiceSequencer;
+  var firstCard = (new List<SelectableCard>(seq.gameObject.GetComponentsInChildren<SelectableCard>())).Find(s => s.Info != null);
   switch (c.choicesType) {
     case CardChoicesType.Random:
       var cards = string.Join("\n", seq.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {sCardInfo(s.Info, true)}"));
       return $"You are currently at card choice event. Pick one of the following cards:\n{cards}{seq.choicesRerolled ? "" : "\nYou may also reroll the cards with clover, but you can do so only once per event."}";
+    case CardChoicesType.Tribe:
+      if (firstCard != null) {
+        return $"You got {sCardInfo(firstCard.Info, true)}";
+      }
+      var tribes = string.Join("\n", seq.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {s.ChoiceInfo.tribe}"));
+      return $"You are currently at tribe-based card choice event. Pick one of the following tribes:\n{tribes}{seq.choicesRerolled ? "" : "\nYou may also reroll the tribes (not cards) with clover, but you can do so only once per event."}";
     default:
       return null; // TODO: Add other card choice types.
   }
