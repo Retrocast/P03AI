@@ -180,11 +180,19 @@ static string sWoodcarverEvent() {
   var pieces = string.Join("\n", seq.slots.Select(s => $"- {sTotemPiece(s)}"));
   return $"You are currently at Woodcarver's event, where you pick one of 3 totem pieces. Tops indicate a tribe. Bottoms indicate the sigil that will be added to all cards of that tribe on top. You need at least one top and bottom to build a totem. If you already have a totem, but one of offered pieces will make it even better, pick it and say you want to change the totem. If your current is better than what you can build with current options, just pick the lesser of evils and say you want to keep the current totem.\nTotem pieces you can pick:\n{pieces}";
 }
+static string sTrapperEvent() {
+  var seq = snh().buyPeltsSequencer;
+  var p = seq.PeltPrices;
+  return $"You are currently at Trapper's event, where you can exchange teeth(overkill damage) for Rabbit/Wolf/Golden Pelts. Pelts are added as cards to your deck, and can be exchanged for proper cards at Trader's event (Rabbit - random cards, Wolf - random cards with infused sigils, Golden - rares). They are free cards that can't be sacrificed and have 1, 2 and 3 Health respectively, and can be used as damage blockers (you do not lose them if they die in battle). You receive one Rabbit Pelt free of charge. You currently have {RunState.Run.currency} teeth. Prices are:\n- {p[0]} teeth per Rabbit Pelt\n- {p[1]} teeth per Wolf Pelt\n- {p[2]} teeth for Golden Pelt\n{(RunState.Run.trapperKnifeBought || RunState.Run.consumables.Count > RunState.Run.MaxConsumables) ? "" : "- 7 teeth for Trapper's Knife, a one-time consumable item that acts similarly to Scissors, destroying selected Leshy's card, but also gives you a free Wolf Pelt in hand"}\n\nYou are not required to buy anything, and you can pass, if you feel like you don't want to clutter your deck with pelts.";
+}
 
 static string sEvent() {
   var n = getMapNode();
   if (n is BuildTotemNodeData) {
     return sWoodcarverEvent();
+  }
+  if (n is BuyPeltsNodeData) {
+    return sTrapperEvent();
   }
   return null;
 }
