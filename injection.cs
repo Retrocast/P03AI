@@ -247,8 +247,16 @@ static string sCampfire() {
   return $"You are currently at Campfire event. Pick one of the following cards:\n{cards}\nCampfire will increase its {isAttack ? "Power by 1" : "Health by 2"}.\n{RunState.Run.survivorsDead ? "Since survivors are dead, you can upgrade second time without any risk!" : "You may also upgrade for second time, but it has 50% risk to lose your card."}";
 }
 
+static string sBossRares() {
+  var cards = string.Join("\n", snh().rareCardChoiceSequencer.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {sCardInfo(s.Info)}"));
+  return $"As a reward for beating a boss, pick one of the following cards:\n{cards}";
+}
+
 static string sEvent() {
   var n = getMapNode();
+  if (n is BossBattleNodeData) {
+    return sBossRares();
+  }
   if (n is BuildTotemNodeData) {
     return sWoodcarverEvent();
   }
