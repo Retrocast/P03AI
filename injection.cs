@@ -54,8 +54,12 @@ static IEnumerator getResponse(string meta) {
 }
 #endregion
 #region Basic summarizers
+static string sConsumable(string name) {
+  var c = ItemsUtil.GetConsumableByName(name);
+  return $"{c.rulebookName}[{RuleBookPage.ParseCardDefinition(c.rulebookDescription)}]";
+}
 static string sConsumables() {
-  return $"Consumable items ({RunState.Run.consumables.Count}/{RunState.Run.MaxConsumables}):\n{RunState.Run.consumables.Count == 0 ? "- You have none": string.Join("\n", RunState.Run.consumables.Select(x => ItemsUtil.GetConsumableByName(x)).Select(x => $"- {x.rulebookName}[{RuleBookPage.ParseCardDefinition(x.rulebookDescription)}]"))}";
+  return $"Consumable items ({RunState.Run.consumables.Count}/{RunState.Run.MaxConsumables}):\n{RunState.Run.consumables.Count == 0 ? "- You have none": string.Join("\n", RunState.Run.consumables.Select(x => $"- {sConsumable(x)}"))}";
 }
 static string sAbilityInfo(Ability a, string c = null) {
   return $"{AbilitiesUtil.GetInfo(a).rulebookName}[{RuleBookPage.ParseCardDefinition(AbilitiesUtil.GetInfo(a).rulebookDescription).Replace("[creature]", (c ?? "a card bearing this sigil"))}]";
@@ -69,14 +73,15 @@ static string sTotems() {
   var bottoms = _bottoms.Count == 0 ? "you don't have any" : string.Join(", ", _bottoms.Select(a => sAbilityInfo(a)));
   return $"YOUR Current totem (creatures of tribe X get sigil Y): {totem}\n[{_tops.Count}] YOUR totem tops (tribes): {tops}\n[{_bottoms.Count}] YOUR totem bottoms (sigils): {bottoms}";
 }
-static string sCardInfo(CardInfo c) {
+static string sCardInfo(CardInfo c, bool withDescription=false) {
 	if (c.name == "!STATIC!GLITCH") return "Static glitch card (turns into random card when drawn)";
   string cost = c.BloodCost == 0 ? (c.BonesCost == 0 ? "free" : $"{c.BonesCost} bone cost") : $"{c.BloodCost} blood cost";
   string power = c.SpecialStatIcon == SpecialStatIcon.None ? $"{c.Attack} power" : "power - " + (string.IsNullOrEmpty(StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription) ? StatIconInfo.GetIconInfo(c.SpecialStatIcon).rulebookDescription : StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription).Replace("[creature]", c.DisplayedNameEnglish);
   string tribes = (c.tribes.Count == 0 ? "not part of a" : string.Join(", ", c.tribes)) + " tribe" + (c.tribes.Count > 1 ? "s" : "");
   string naturalSigils = c.DefaultAbilities.Count == 0 ? "none" : string.Join(", ", c.DefaultAbilities.Select(a => sAbilityInfo(a, c.DisplayedNameEnglish)));
   string infusedSigils = c.ModAbilities.Count == 0 ? "none" : string.Join(", ", c.ModAbilities.Select(a => sAbilityInfo(a, c.DisplayedNameEnglish)));
-  return $"{c.DisplayedNameEnglish} ({cost}; {power}; {c.Health} health; {tribes}; natural sigils - {naturalSigils}; infused sigils - {infusedSigils})";
+  string description = (withDescription && !string.IsNullOrEmpty(c.description)) ? " // " + c.description : "";
+  return $"{c.DisplayedNameEnglish} ({cost}; {power}; {c.Health} health; {tribes}; natural sigils - {naturalSigils}; infused sigils - {infusedSigils}){description}";
 }
 static string sDeck() {
   return $"Your deck:\n{string.Join("\n", RunState.DeckList.Select(c => $"- {sCardInfo(c)}"))}";
@@ -193,6 +198,16 @@ static string sTrapperEvent() {
   return $"You are currently at Trapper's event, where you can exchange teeth(overkill damage) for Rabbit/Wolf/Golden Pelts. Pelts are added as cards to your deck, and can be exchanged for proper cards at Trader's event (Rabbit - random cards, Wolf - random cards with infused sigils, Golden - rares). They are free cards that can't be sacrificed and have 1, 2 and 3 Health respectively, and can be used as damage blockers (you do not lose them if they die in battle). You receive one Rabbit Pelt free of charge. You currently have {RunState.Run.currency} teeth. Prices are:\n- {p[0]} teeth per Rabbit Pelt\n- {p[1]} teeth per Wolf Pelt\n- {p[2]} teeth for Golden Pelt\n{(RunState.Run.trapperKnifeBought || RunState.Run.consumables.Count > RunState.Run.MaxConsumables) ? "" : "- 7 teeth for Trapper's Knife, a one-time consumable item that acts similarly to Scissors, destroying selected Leshy's card, but also gives you a free Wolf Pelt in hand"}\n\nYou are not required to buy anything, and you can pass, if you feel like you don't want to clutter your deck with pelts.";
 }
 
+static string sPackEvent() {
+  var seq = snh().gainConsumablesSequencer;
+  if (RunState.Run.consumables.Count == RunState.Run.MaxConsumables) {
+    return $"Your pack was full... But a small critter approached.\n{sCardInfo(seq.fullConsumablesReward)} was added to your deck.";
+  }
+  var items = string.Join("\n", seq.slots.Select(s => $"- {sConsumable(s.Item.Data.name)}"));
+  var more = RunState.Run.MaxConsumables - RunState.Run.consumables.Count - 1;
+  return $"You are currently at Pack event. Chose ONE of the following items:\n{items}{more > 0 ? $"\nYou will be asked {more} more time(s) with different items in next message(s)." : ""}";
+}
+
 static string sEvent() {
   var n = getMapNode();
   if (n is BuildTotemNodeData) {
@@ -200,6 +215,9 @@ static string sEvent() {
   }
   if (n is BuyPeltsNodeData) {
     return sTrapperEvent();
+  }
+  if (n is GainConsumablesNodeData) {
+    return sPackEvent();
   }
   return null;
 }
