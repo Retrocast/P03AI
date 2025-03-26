@@ -15,7 +15,7 @@ Press `[` to send summary, press `]` to generate AI response.
   - [x] Drawing
   - [ ] Boss battle
     - [x] Boss rares
-  - [ ] THE MOON
+  - [x] THE MOON
 - [x] Map
   - [x] Node descriptions
   - [x] Info on following nodes
