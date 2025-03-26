@@ -11,6 +11,7 @@ using System.Linq;
 using DiskCardGame;
 */
 
+#region General utilities
 static IEnumerator coDisplayText(string text) {
   yield return Singleton<TextDisplayer>.Instance.ShowThenClear(text, 1, speaker: DialogueEvent.Speaker.Goo);
 }
@@ -22,6 +23,37 @@ static void displayText(string text) {
 }
 static GameFlowManager gfm = Singleton<GameFlowManager>.Instance;
 static Func<NodeData> getMapNode = () => RunState.Run.map.nodeData.Find(n => n.id == RunState.Run.currentNodeId);
+#endregion
+#region API calls
+static IEnumerator sendSystemMessage(string displayText, string text, string successText="Request sent successfully!") {
+  string url = "http://localhost:1337/sendSystemMessage";
+  var www = UnityEngine.Networking.UnityWebRequest.Post(url, $"{displayText}|{text}");
+  yield return www.SendWebRequest();
+  string _text;
+  if (www.isNetworkError || www.isHttpError) {
+    UnityEngine.Debug.LogError(www.error);
+    _text = "[c:bR]Request error, check the console![c:]";
+  } else {
+    _text = successText;
+  }
+  yield return coDisplayText(_text);
+}
+
+static IEnumerator getResponse(string meta) {
+  string url = "http://localhost:1337/getResponse";
+  var www = UnityEngine.Networking.UnityWebRequest.Post(url, meta);
+  yield return www.SendWebRequest();
+  string _text;
+  if (www.isNetworkError || www.isHttpError) {
+    UnityEngine.Debug.LogError(www.error);
+    _text = "[c:bR]Request error, check the console![c:]";
+  } else {
+    _text = "AI generation started";
+  }
+  yield return coDisplayText(_text);
+}
+#endregion
+#region Basic summarizers
 static string sConsumables() {
   return $"Consumable items ({RunState.Run.consumables.Count}/{RunState.Run.MaxConsumables}):\n{RunState.Run.consumables.Count == 0 ? "- You have none": string.Join("\n", RunState.Run.consumables.Select(x => ItemsUtil.GetConsumableByName(x)).Select(x => $"- {x.rulebookName}[{RuleBookPage.ParseCardDefinition(x.rulebookDescription)}]"))}";
 }
@@ -49,7 +81,6 @@ static string sCardInfo(CardInfo c) {
 static string sDeck() {
   return $"Your deck:\n{string.Join("\n", RunState.DeckList.Select(c => $"- {sCardInfo(c)}"))}";
 }
-
 static string sPlayableCard(PlayableCard p, bool withCost=false) {
   var c = p.Info;
   string cost = (c.BloodCost == 0 ? (c.BonesCost == 0 ? "free" : $"{c.BonesCost} bone cost") : $"{c.BloodCost} blood cost") + "; ";
@@ -64,7 +95,11 @@ static string sPlayableCard(PlayableCard p, bool withCost=false) {
   string tempSigils = _tempSigils.Count == 0 ? "" : "; temporary sigils(from totems/buffs/etc) - " + string.Join(", ", _tempSigils.Select(a => sAbilityInfo(a, c.DisplayedNameEnglish)));
   return $"{c.DisplayedNameEnglish} ({withCost ? cost : ""}{p.Attack} power{c.SpecialStatIcon == SpecialStatIcon.None ? "" : "[" + (string.IsNullOrEmpty(StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription) ? StatIconInfo.GetIconInfo(c.SpecialStatIcon).rulebookDescription : StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription).Replace("[creature]", c.DisplayedNameEnglish) + "]"}; {p.Health} health; natural sigils - {naturalSigils}{infusedSigils}{tempSigils})";
 }
-
+static string getMetadata() {
+  return $"{sDeck()}\n{sConsumables()}\n{sTotems()}";
+}
+#endregion
+#region Battle summarizers
 static string sHand() {
   return $"Your hand:\n{string.Join("\n", Singleton<PlayerHand>.Instance.CardsInHand.Select(p => $"- {sPlayableCard(p, true)}"))}";
 }
@@ -129,37 +164,8 @@ static string sOpponent() {
 static string sBattle() {
   return $"{sOpponent()}\nTurn #{Singleton<TurnManager>.Instance.TurnNumber}\n{sScales()}\n{sBoardLeshySide()}\n{sBoardPlayerSide()}\n{sHand()}";
 }
-
-static IEnumerator sendSystemMessage(string displayText, string text, string successText="Request sent successfully!")
-{
-  string url = "http://localhost:1337/sendSystemMessage";
-  var www = UnityEngine.Networking.UnityWebRequest.Post(url, $"{displayText}|{text}");
-  yield return www.SendWebRequest();
-  string _text;
-  if (www.isNetworkError || www.isHttpError) {
-    UnityEngine.Debug.LogError(www.error);
-    _text = "[c:bR]Request error, check the console![c:]";
-  } else {
-    _text = successText;
-  }
-  yield return coDisplayText(_text);
-}
-
-static IEnumerator getResponse(string meta)
-{
-  string url = "http://localhost:1337/getResponse";
-  var www = UnityEngine.Networking.UnityWebRequest.Post(url, meta);
-  yield return www.SendWebRequest();
-  string _text;
-  if (www.isNetworkError || www.isHttpError) {
-    UnityEngine.Debug.LogError(www.error);
-    _text = "[c:bR]Request error, check the console![c:]";
-  } else {
-    _text = "AI generation started";
-  }
-  yield return coDisplayText(_text);
-}
-
+#endregion
+#region Event summarizers
 static Func<SpecialNodeHandler> snh = () => Singleton<SpecialNodeHandler>.Instance;
 static string sTotemPiece(SelectableItemSlot s) {
   var data = s.Item.Data;
@@ -180,6 +186,7 @@ static string sWoodcarverEvent() {
   var pieces = string.Join("\n", seq.slots.Select(s => $"- {sTotemPiece(s)}"));
   return $"You are currently at Woodcarver's event, where you pick one of 3 totem pieces. Tops indicate a tribe. Bottoms indicate the sigil that will be added to all cards of that tribe on top. You need at least one top and bottom to build a totem. If you already have a totem, but one of offered pieces will make it even better, pick it and say you want to change the totem. If your current is better than what you can build with current options, just pick the lesser of evils and say you want to keep the current totem.\nTotem pieces you can pick:\n{pieces}";
 }
+
 static string sTrapperEvent() {
   var seq = snh().buyPeltsSequencer;
   var p = seq.PeltPrices;
@@ -196,7 +203,8 @@ static string sEvent() {
   }
   return null;
 }
-
+#endregion
+#region Map summarizers
 static string sNodeData(NodeData n) {
   if (n is BossBattleNodeData b) {
     return $"Boss battle node - {b.bossType}BattleSequencer";
@@ -268,11 +276,8 @@ static string sNode(NodeData node, int depth) {
   }
   return summary;
 }
-
-static string getMetadata() {
-  return $"{sDeck()}\n{sConsumables()}\n{sTotems()}";
-}
-
+#endregion
+#region Key handler
 static void Update() {
   if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.RightBracket)) {
     coExecute(getResponse(getMetadata()));
@@ -310,6 +315,7 @@ static void Update() {
     }
   }
 }
+#endregion
 
 // The thingy that actually calls the Update as patch for ManagedUpdate of OilPaintingPuzzle and wraps it in try/catch.
 // Seems like a good candidate, since it is always present in cabin in single instance.
