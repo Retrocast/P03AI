@@ -272,6 +272,10 @@ static string sMycologists() {
   return $"You are currently at the Mycologists' event. They will merge duplicate cards from your deck into more powerful single card while keeping price the same. Pick a pair:\n{pairs}";
 }
 
+static string sBoneLord() {
+  return $"You came across some familiar stones. But there was something different...\nYou intuited that the fate of the creature selected for this... would not be pleasant.\nChoose, which card to remove from {sDeck()}";
+}
+
 static string sEvent() {
   var n = getMapNode();
   if (n is BossBattleNodeData) {
@@ -288,6 +292,9 @@ static string sEvent() {
   }
   if (n is CardMergeNodeData) {
     return sMysteriousStones();
+  }
+  if (n is CardRemoveNodeData) {
+    return sBoneLord();
   }
   if (n is CardStatBoostNodeData) {
     return sCampfire();
