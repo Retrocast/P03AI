@@ -222,6 +222,13 @@ static string sTrader() {
   return $"You are currently at Trader's event, where you can exchange your pelts for cards. Choose {seq.peltCards.Count} cards from the following:\n{string.Join("\n", seq.tradeCards.Select(s => $"- {sCardInfo(s.Info)}"))}";
 }
 
+static string sMysteriousStones() {
+  var seq = snh().cardMerger;
+  var hosts = string.Join("\n", seq.GetValidCardsForHost().Select(c => $"- {sCardInfo(c)}"));
+  var sacrifices = string.Join("\n", seq.GetValidCardsForSacrifice().Select(c => $"- {sCardInfo(c)}"));
+  return $"You are currently at Mysterious Stones event, where you can sacrifice a card to transfer its sigils to another card. Pick the sacrifice and the host (card that will receive the sigils). It can't be the same card!\nSacrifice list:\n{sacrifices}\nHost list:\n{hosts}";
+}
+
 static string sEvent() {
   var n = getMapNode();
   if (n is BuildTotemNodeData) {
@@ -229,6 +236,9 @@ static string sEvent() {
   }
   if (n is BuyPeltsNodeData) {
     return sTrapperEvent();
+  }
+  if (n is CardMergeNodeData) {
+    return sMysteriousStones();
   }
   if (n is GainConsumablesNodeData) {
     return sPackEvent();
