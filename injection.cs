@@ -166,8 +166,17 @@ static string sOpponent() {
   return $"Currently in battle with [{name}] w/ {totem}";
 }
 
+static string sPiles() {
+  var cdp = CardDrawPiles3D.Instance;
+  return $"Cards remaining in main pile (deck) - {cdp.pile.NumCards}\nCards remaining in side pile (squirrels) - {cdp.sidePile.NumCards}";
+}
+
 static string sBattle() {
-  return $"{sOpponent()}\nTurn #{Singleton<TurnManager>.Instance.TurnNumber}\n{sScales()}\n{sBoardLeshySide()}\n{sBoardPlayerSide()}\n{sHand()}";
+  var draw = "\nYou have already drawn a card. Now you have to decide what cards to play";
+  if (Singleton<TurnManager>.Instance.PlayerPhase == TurnManager.PlayerTurnPhase.Draw) {
+    draw = $"\nYou must choose whether you want to draw from main pile (remaining cards in your deck) or side pile (guaranteed Squirrel). If you choose main pile, do NOT specify your play yet, since in most cases you do not know what card you'll draw.";
+  }
+  return $"{sOpponent()}\nTurn #{Singleton<TurnManager>.Instance.TurnNumber}\n{sScales()}\n{sBoardLeshySide()}\n{sBoardPlayerSide()}\n{sHand()}\nYou have {Singleton<ResourcesManager>.Instance.PlayerBones} bones (you get one each time your creature perishes for any reason)\n{sPiles()}\n{draw}\nWhen specifying your plays, make sure to explicitly clarify all the card placements and what cards to sacrifice.";
 }
 #endregion
 #region Event summarizers
