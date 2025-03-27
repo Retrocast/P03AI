@@ -6,14 +6,18 @@ AI plays Inscryption thingy.
 Inject [injection.cs](injection.cs) into the game, tweak prompt in [index.ts](index.ts#L5), put OpenAI API token into `OPENAI_API_KEY` env var, and run `index.ts` with [Bun](https://bun.sh).
 Press `[` to send summary, press `]` to generate AI response.
 
-## Roadmap
+## TODO
 
 - [ ] Card battle
   - [x] Base stuff
+  - [ ] Leshy' surrender offers
   - [x] Normal battle
   - [x] Totem battle
   - [x] Drawing
   - [ ] Boss battle
+    - [ ] Angler's hook
+    - [ ] Trapper/Trader second phase explanation
+    - [ ] Prospector board wipe explanation
     - [x] Boss rares
   - [x] THE MOON
 - [x] Map
@@ -27,7 +31,7 @@ Press `[` to send summary, press `]` to generate AI response.
   - [x] Trapper
   - [ ] Card choices
     - [x] Normal
-    - [ ] Cost
+    - [x] Cost
     - [x] Tribe
     - [ ] Deathcard??
   - [x] Mysterious stones
