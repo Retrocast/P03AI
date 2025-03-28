@@ -289,10 +289,24 @@ static string sBoneLord() {
   return $"You came across some familiar stones. But there was something different...\nYou intuited that the fate of the creature selected for this... would not be pleasant.\nChoose, which card to remove from {sDeck()}";
 }
 
+static string sProspectorGamble() {
+  var card = new List<SelectableCard>(snh().boulderChoiceSequencer.gameObject.GetComponentsInChildren<DiskCardGame.SelectableCard>()).Find(x => x.Info.name != "Boulder");
+  if (card == null) {
+    return $"You are currently at Prospector's event.\n\"Iffen ye can pick a boulder that has gold in it... Ye can keep it!\"\nThere are three boulders - left, center, and right.\n\"Show me where to strike!\"";
+  }
+  if (card.Info.name == "PeltGolden") {
+    return $"\"\"\"Heeeeeeee-haaw! 'tis gold!\nI can barely abide giving it to ye...\nBut a promise is a promise where I'm from.\"\"\"\n{sCardInfo(card.Info)} was added to your deck.";
+  }
+  return $"\"\"\"Dag nab it... no gold.\nBut that is a funny lookin' varmint.\nKeep it.\"\"\"\n{sCardInfo(card.Info)} was added to your deck.";
+}
+
 static string sEvent() {
   var n = getMapNode();
   if (n is BossBattleNodeData) {
     return sBossRares();
+  }
+  if (n is BoulderChoiceNodeData) {
+    return sProspectorGamble();
   }
   if (n is BuildTotemNodeData) {
     return sWoodcarverEvent();
