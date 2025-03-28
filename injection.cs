@@ -21,7 +21,7 @@ static void coExecute(IEnumerator co) {
 static void displayText(string text) {
   coExecute(coDisplayText(text));
 }
-static GameFlowManager gfm = Singleton<GameFlowManager>.Instance;
+static Func<GameFlowManager> gfm = () => Singleton<GameFlowManager>.Instance;
 static Func<NodeData> getMapNode = () => RunState.Run.map.nodeData.Find(n => n.id == RunState.Run.currentNodeId);
 #endregion
 #region API calls
@@ -439,7 +439,7 @@ static void Update() {
     coExecute(getResponse(getMetadata()));
   }
   if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.LeftBracket)) {
-    switch (gfm.CurrentGameState) {
+    switch (gfm().CurrentGameState) {
       case GameState.CardBattle:
         coExecute(sendSystemMessage("battle summary", sBattle()));
         break;
