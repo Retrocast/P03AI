@@ -10,7 +10,7 @@ Press `[` to send summary, press `]` to generate AI response.
 
 - [ ] Card battle
   - [x] Base stuff
-  - [ ] Leshy' surrender offers
+  - [ ] Leshy's surrender offers
   - [x] Normal battle
   - [x] Totem battle
   - [x] Drawing
@@ -24,7 +24,7 @@ Press `[` to send summary, press `]` to generate AI response.
   - [x] Node descriptions
   - [x] Info on following nodes
 - [ ] Events
-  - [ ] Boulder gambling
+  - [x] Boulder gambling
   - [ ] Woodcarver
     - [x] Base thing
     - [ ] Amalgam
