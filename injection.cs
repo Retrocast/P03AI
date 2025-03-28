@@ -300,6 +300,22 @@ static string sProspectorGamble() {
   return $"\"\"\"Dag nab it... no gold.\nBut that is a funny lookin' varmint.\nKeep it.\"\"\"\n{sCardInfo(card.Info)} was added to your deck.";
 }
 
+static string sGoobert() {
+  var seq = snh().copyCardSequencer;
+  var lastCard = RunState.DeckList.Last();
+  var lastCardCopied = false;
+  foreach (var mod in lastCard.Mods) {
+    if (mod.singletonId == "paint_decal") {
+      lastCardCopied = true;
+    }
+  }
+  if (lastCardCopied) {
+    return $"Goobert's copy was added to your deck - {sCardInfo(lastCard)}";
+  }
+  var cards = string.Join("\n", seq.GetValidCards().Select(c => $"- {sCardInfo(c)}"));
+  return $"You are currently on Goobert's event, where he may draw a copy of one of your cards. Keep in mind that copies may not always be perfect, but hey, Goobert tries his best. Pick one of the following cards:\n{cards}";
+}
+
 static string sEvent() {
   var n = getMapNode();
   if (n is BossBattleNodeData) {
@@ -325,6 +341,9 @@ static string sEvent() {
   }
   if (n is CardStatBoostNodeData) {
     return sCampfire();
+  }
+  if (n is CopyCardNodeData) {
+    return sGoobert();
   }
   if (n is DeckTrialNodeData) {
     return sDeckTrial();
