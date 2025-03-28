@@ -40,7 +40,7 @@ Press `[` to send summary, press `]` to generate AI response.
   - [x] Mysterious stones
   - [x] Bone Lord
   - [x] Campfire
-  - [ ] Goobert
+  - [x] Goobert
   - [x] Deck trial
   - [ ] Mycologists
     - [x] Base thing
