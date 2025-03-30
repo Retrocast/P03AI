@@ -59,7 +59,7 @@ function cleanOldMessages() {
   let tokens;
   let popped = 0;
   while ((tokens = numTokens()) > MAX_TOKENS) {
-    MESSAGES.splice(1, 1);
+    MESSAGES.splice(0, 1);
     popped++;
   }
   if (popped > 0) {
