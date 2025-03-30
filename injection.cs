@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using DiskCardGame;
+using UnityEngine;
 */
 
 #region General utilities
@@ -192,13 +193,23 @@ static string sTotemPiece(SelectableItemSlot s) {
   return $"Unknown totem piece. Blame Retrocast. Ask for additional information.";
 }
 static string sWoodcarverEvent() {
+  var intro = "You are currently at Woodcarver's event, where you pick one of 3 totem pieces. Tops indicate a tribe. Bottoms indicate the sigil that will be added to all cards of that tribe on top. You need at least one top and bottom to build a totem. If you already have a totem, but one of offered pieces will make it even better, pick it and say you want to change the totem. If your current is better than what you can build with current options, just pick the lesser of evils and say you want to keep the current totem.";
   var seq = snh().buildTotemSequencer;
   if (seq.GetFirstEmptyInventorySlot() == null || (RunState.Run.totemTops.Count+RunState.Run.totemBottoms.Count) >= 7) {
-    var amalgam = seq.gameObject.GetComponentInChildren<SelectableCard>().Info;
-    return $"A look of regret fell over the old woodcarver. You were overburdened with totem pieces and you could carry no more.\nShe gestured toward a disturbing creature lurking nearby.\n{sCardInfo(amalgam)} was added to your deck.\nCanine. Hooved. Reptile. Bird. Insect. The Amalgam is all.";
+    CardInfo amalgam = null;
+    foreach (var s in GameObject.FindObjectsOfType<SelectableCard>()) {
+      var c = s.Info;
+      // Not entirely sure about cardSelected check. Seems good enough, but might break shit in future.
+      // Definitely the first candidate for removal in case of issues, I assume there aren't many Amalgam SelectableCards lying around in this event anyways.
+      if (c != null && c.name == "Amalgam" && s.cardSelected != null && s.cardSelected.Method != null && s.cardSelected.Method.Name.Contains("TotemSlotsFull")) {
+        amalgam = c;
+      }
+    }
+    if (amalgam == null) return null;
+    return $"{intro}\n\nA look of regret fell over the old woodcarver. You were overburdened with totem pieces and you could carry no more.\nShe gestured toward a disturbing creature lurking nearby.\n{sCardInfo(amalgam)} was added to your deck.\nCanine. Hooved. Reptile. Bird. Insect. The Amalgam is all.\n";
   }
   var pieces = string.Join("\n", seq.slots.Select(s => $"- {sTotemPiece(s)}"));
-  return $"You are currently at Woodcarver's event, where you pick one of 3 totem pieces. Tops indicate a tribe. Bottoms indicate the sigil that will be added to all cards of that tribe on top. You need at least one top and bottom to build a totem. If you already have a totem, but one of offered pieces will make it even better, pick it and say you want to change the totem. If your current is better than what you can build with current options, just pick the lesser of evils and say you want to keep the current totem.\nTotem pieces you can pick:\n{pieces}";
+  return $"{intro}\nTotem pieces you can pick:\n{pieces}";
 }
 
 static string sTrapperEvent() {
