@@ -21,6 +21,7 @@ Press `[` to send summary, press `]` to generate AI response.
     - [ ] Angler's hook
     - [ ] Trapper/Trader second phase explanation
     - [ ] Prospector board wipe explanation
+    - [ ] Final boss fight shenanigans
     - [x] Boss rares
   - [x] THE MOON
 - [x] Map
@@ -42,9 +43,9 @@ Press `[` to send summary, press `]` to generate AI response.
   - [x] Campfire
   - [x] Goobert
   - [x] Deck trial
-  - [ ] Mycologists
+  - [x] Mycologists
     - [x] Base thing
-    - [ ] No duplicates
+    - [x] No duplicates
   - [x] Pack
     - [x] Base thing
     - [x] Pack Rat
