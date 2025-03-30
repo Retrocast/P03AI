@@ -29,9 +29,9 @@ Press `[` to send summary, press `]` to generate AI response.
   - [x] Info on following nodes
 - [ ] Events
   - [x] Boulder gambling
-  - [ ] Woodcarver
+  - [x] Woodcarver
     - [x] Base thing
-    - [ ] Amalgam
+    - [x] Amalgam
   - [x] Trapper
   - [ ] Card choices
     - [x] Normal
