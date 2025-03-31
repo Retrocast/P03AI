@@ -17,11 +17,16 @@ Press `[` to send summary, press `]` to generate AI response.
   - [x] Normal battle
   - [x] Totem battle
   - [x] Drawing
+  - [ ] General notes about the game (TL;DR of Leshy's tutorial)
+  - [ ] More card info
   - [ ] Boss battle
     - [ ] Angler's hook
-    - [ ] Trapper/Trader second phase explanation
-    - [ ] Prospector board wipe explanation
+    - [x] Trapper/Trader second phase explanation
+    - [x] Prospector board wipe explanation
     - [ ] Final boss fight shenanigans
+      - [ ] Pickaxe
+      - [ ] Hook
+      - [ ] Trading
     - [x] Boss rares
   - [x] THE MOON
 - [x] Map
