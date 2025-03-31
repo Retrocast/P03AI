@@ -130,6 +130,9 @@ Bun.serve({
     '/getResponse': async (req) => {
       const text = decodeURIComponent(await req.text());
       (async () => {
+        if (MESSAGES.length > 0 && MESSAGES[MESSAGES.length - 1].who == 'ai') {
+          MESSAGES.pop();
+        }
         let message: AIMessage = { who: 'ai', text: '' };
         MESSAGES.push(message);
         printMessages();
