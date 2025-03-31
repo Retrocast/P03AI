@@ -43,7 +43,7 @@ function backupMessages() {
   MESSAGE_FILE.write(JSON.stringify(MESSAGES, null, 2));
 }
 
-const MAX_TOKENS = 4000;
+const MAX_TOKENS = 8000;
 const TT = encodingForModel('gpt-4o');
 function numTokens(): number {
   // Loosely based on https://github.com/DougDougGithub/Babagaboosh/blob/main/openai_chat.py#L6
