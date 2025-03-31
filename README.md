@@ -20,8 +20,8 @@ Press `[` to send summary, press `]` to generate AI response.
   - [ ] General notes about the game (TL;DR of Leshy's tutorial)
   - [ ] More card info
   - [ ] Snitching on Ijiraq
-  - [ ] Boss battle
-    - [ ] Angler's hook
+  - [x] Boss battle
+    - [x] Angler's hook
     - [x] Trapper/Trader second phase explanation
     - [x] Prospector board wipe explanation
     - [x] Final boss fight shenanigans
