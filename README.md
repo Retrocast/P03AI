@@ -27,17 +27,17 @@ Press `[` to send summary, press `]` to generate AI response.
 - [x] Map
   - [x] Node descriptions
   - [x] Info on following nodes
-- [ ] Events
+- [x] Events
   - [x] Boulder gambling
   - [x] Woodcarver
     - [x] Base thing
     - [x] Amalgam
   - [x] Trapper
-  - [ ] Card choices
+  - [x] Card choices
     - [x] Normal
     - [x] Cost
     - [x] Tribe
-    - [ ] Deathcard??
+    - [x] Deathcard??
   - [x] Mysterious stones
   - [x] Bone Lord
   - [x] Campfire
