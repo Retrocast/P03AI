@@ -13,7 +13,7 @@ Press `[` to send summary, press `]` to generate AI response.
 
 - [ ] Card battle
   - [x] Base stuff
-  - [ ] Leshy's surrender offers
+  - [x] Leshy's surrender offers
   - [x] Normal battle
   - [x] Totem battle
   - [x] Drawing
