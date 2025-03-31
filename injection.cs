@@ -195,6 +195,14 @@ static (bool, string, string) sOpponent() {
     }
   }
   var notes = "";
+  if (_o is AnglerBossOpponent a) {
+    var baitBuckets = $"\nAttacking Bait Buckets will spawn {sCardInfo(CardLoader.GetCardByName("Shark"))}, so it can be smart to only play Airborne creatures or attack empty lanes, as well as sacrificing current cards that will trigger Great Whites and won't have enough health to take a hit from them. Keep in mind that because of Waterborne you will not be able to kill Great Whites once they are spawned, and can only attack Leshy directly while they are submerged.";
+    if (a.NumLives == 2) {
+      notes = $"\nEvery two turns Angler will start targeting a card with his hook, and target every newly placed card. At the end of next turn (AFTER his creatures attack), he will pull the targeted card to his side. If there's a card opposing it, it will be pushed back into queue. If there's a queued card already, it will be removed from the board. It can be beneficial to play a weak card like a Squirrel so it gets stolen instead of important cards. {sHookGrab()}{baitBuckets}";
+    } else {
+      notes = baitBuckets;
+    }
+  }
   if (_o is LeshyBossOpponent l) {
     var leshyPhase = "";
     switch (l.NumLives) {
