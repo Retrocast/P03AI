@@ -249,8 +249,9 @@ static string sCardChoice(CardChoicesNodeData c) {
   var firstCard = (new List<SelectableCard>(seq.gameObject.GetComponentsInChildren<SelectableCard>())).Find(s => s.Info != null);
   switch (c.choicesType) {
     case CardChoicesType.Random:
+    case CardChoicesType.Deathcard:
       var cards = string.Join("\n", seq.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {sCardInfo(s.Info, true)}"));
-      return $"You are currently at card choice event. Pick one of the following cards:\n{cards}{seq.choicesRerolled ? "" : "\nYou may also reroll the cards with clover, but you can do so only once per event."}";
+      return $"You are currently at {c.choicesType == CardChoicesType.Deathcard ? "death" : ""}card choice event. Pick one of the following cards:\n{cards}{seq.choicesRerolled ? "" : "\nYou may also reroll the cards with clover, but you can do so only once per event."}";
     case CardChoicesType.Tribe:
       if (firstCard != null) {
         return $"You got {sCardInfo(firstCard.Info, true)}";
@@ -264,7 +265,7 @@ static string sCardChoice(CardChoicesNodeData c) {
       var costs = string.Join("\n", seq.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {s.ChoiceInfo.resourceType == ResourceType.Bone ? "Any bone cost" : $"{s.ChoiceInfo.resourceAmount} blood cost"}"));
       return $"You are currently at cost-based card choice event. Pick one of the following costs:\n{costs}{seq.choicesRerolled ? "" : "\nYou may also reroll the costs (not cards) with clover, but you can do so only once per event."}";
     default:
-      return null; // TODO: Add other card choice types.
+      return null;
   }
 }
 
