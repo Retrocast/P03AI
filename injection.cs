@@ -229,6 +229,14 @@ static (bool, string, string) sOpponent() {
           break;
         case Opponent.Type.TrapperTraderBoss:
           currentMask = $"{mask} At the end of this turn (BEFORE his creatures attack), he will play two new cards and let you to take any card from his side into your hand, but the rest will stay to fight against you.";
+          var trade = l.GetComponent<TradeCardsForPelts>();
+          var pelts = Singleton<PlayerHand>.Instance.CardsInHand.Where((PlayableCard x) => x.Info.HasTrait(Trait.Pelt)).ToList();
+          // Copypasted from below.
+          if (l.NumLives > 1 && trade != null && pelts.Count > 0 && Singleton<PlayerHand>.Instance.PlayingLocked && !(Singleton<BoardManager>.Instance as BoardManager3D).Bell.enabled) {
+            var numPelts = Mathf.Min(pelts.Count, 8);
+            somethingSpecial = true;
+            meta = $"\nTime for the Trader gimmick. You may take {numPelts} card{numPelts > 1 ? "s" : ""} from opponent side of the board or queue, trading them for pelts in your hand. Keep in mind that rest will stay to fight against you, so sometimes it might be smart to take away a dangerous card even if you do not plan to play it, or take cards that oppose your powerful cards so you can win quicker.";
+          }
           break;
       }
     }
