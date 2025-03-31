@@ -152,7 +152,9 @@ static string sScales() {
   }
 }
 
-static string sOpponent() {
+static (bool, string, string) sOpponent() {
+  var somethingSpecial = false;
+  var meta = "";
   var _o = Singleton<TurnManager>.Instance.Opponent;
   var name = _o.GetType().Name;
   if (name == "Part1Opponent") {
@@ -164,7 +166,29 @@ static string sOpponent() {
       totem = $"totem that inscribes {sAbilityInfo(o.totem.TotemItemData.bottom.effectParams.ability)} sigil onto all Leshy's cards of tribe {o.totem.TotemItemData.top.prerequisites.tribe}";
     }
   }
-  return $"Currently in battle with [{name}] w/ {totem}";
+  var notes = "";
+  if (_o is ProspectorBossOpponent p && p.NumLives == 2) {
+    notes = "\nAt the end of phase 1, Prospector will strike all your cards with his pickaxe, turning them into non-sacrificable Gold Nuggets, effectively locking up your board until they are killed by his creatures. Cards turned into Gold Nuggets do NOT return to your hand, so you might want to keep some of cards in your hand to avoid losing in phase 2.\nKilling Pack Mule will give you free Squirrel and 3 random cards, so you may want to do that to have enough cards after Gold Nugget board wipe.";
+  }
+  if (_o is TrapperTraderBossOpponent t) {
+    var trade = t.GetComponent<TradeCardsForPelts>();
+    var pelts = Singleton<PlayerHand>.Instance.CardsInHand.Where((PlayableCard x) => x.Info.HasTrait(Trait.Pelt)).ToList();
+    // You can't really tell whether trading is over or not without hooking deep into the code, so I'm just checking for other signs.
+    // Condition should be rare enough to never give false positives, from what it seems only TradeCardsForPelts and MagnificusGameFlowManager disable the bell like this.
+    if (t.NumLives == 1 && trade != null && pelts.Count > 0 && Singleton<PlayerHand>.Instance.PlayingLocked && !(Singleton<BoardManager>.Instance as BoardManager3D).Bell.enabled) {
+      var numPelts = Mathf.Min(pelts.Count, 8);
+      somethingSpecial = true;
+      meta = $"\nTime for the Trader gimmick. You may take {numPelts} card{numPelts > 1 ? "s" : ""} from opponent side of the board or queue, trading them for pelts in your hand. Keep in mind that rest will stay to fight against you, so sometimes it might be smart to take away a dangerous card even if you do not plan to play it, or take cards that oppose your powerful cards so you can win quicker.";
+    }
+    if (t.NumLives == 2) {
+      notes = "\nStrange Frogs turn into Leaping Traps when killed, be careful! At the end of phase 1, Trader will play 8 powerful cards, allowing you to trade pelts you have for them. You get pelts from cards perishing by Leaping Traps, but be careful to not kill all your good cards to get pelts, since remaining cards you couldn't afford will stay to fight against you.";
+    }
+  }
+  var phase = "";
+  if (_o is Part1BossOpponent b) {
+    phase = $"[Phase {b.StartingLives - b.NumLives + 1}/{b.StartingLives}]";
+  }
+  return (somethingSpecial, $"Currently in battle with {name}{phase} w/ {totem}{notes}", meta);
 }
 
 static string sPiles() {
@@ -173,15 +197,21 @@ static string sPiles() {
 }
 
 static string sBattle() {
-  var draw = "\nYou have already drawn a card. Now you have to decide what cards to play";
+  var (somethingSpecial, opponent, meta) = sOpponent();
+  var draw = "You have already drawn a card. Now you have to decide what cards to play";
   if (Singleton<TurnManager>.Instance.PlayerPhase == TurnManager.PlayerTurnPhase.Draw) {
-    draw = $"\nYou must choose whether you want to draw from main pile (remaining cards in your deck) or side pile (guaranteed Squirrel). If you choose main pile, do NOT specify your play yet, since in most cases you do not know what card you'll draw.";
+    draw = $"You must choose whether you want to draw from main pile (remaining cards in your deck) or side pile (guaranteed Squirrel). If you choose main pile, do NOT specify your play yet, since in most cases you do not know what card you'll draw.";
   }
   var surrender = "";
   if (Singleton<TurnManager>.Instance.Opponent.OfferingSurrender) {
     surrender = "\nLeshy had ran out of cards and offers you surrender. If you accept it, you just win the battle and continue going. It has no consequences. IN 99.9% OF CASES YOU SHOULD ACCEPT IT, SINCE YOU JUST WIN WITH 100% CHANCE INSTEAD OF RISKING OR WASTING TIME.";
   }
-  return $"{sOpponent()}\nTurn #{Singleton<TurnManager>.Instance.TurnNumber}\n{sScales()}\n{sBoardLeshySide()}\n{sBoardPlayerSide()}\n{sHand()}\nYou have {Singleton<ResourcesManager>.Instance.PlayerBones} bones (you get one each time your creature perishes for any reason)\n{sPiles()}\n{draw}\nWhen specifying your plays, make sure to explicitly clarify all the card placements and what cards to sacrifice.{surrender}";
+  var basic = $"{opponent}\nTurn #{Singleton<TurnManager>.Instance.TurnNumber}\n{sScales()}\n{sBoardLeshySide()}\n{sBoardPlayerSide()}\n{sHand()}\nYou have {Singleton<ResourcesManager>.Instance.PlayerBones} bones (you get one each time your creature perishes for any reason)";
+  if (!somethingSpecial) {
+    return $"{basic}\n{sPiles()}\n{draw}\nWhen specifying your plays, make sure to explicitly clarify all the card placements and what cards to sacrifice.{surrender}";
+  } else {
+    return $"{basic}\n{meta}";
+  }
 }
 #endregion
 #region Event summarizers
