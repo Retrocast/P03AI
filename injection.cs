@@ -177,7 +177,11 @@ static string sBattle() {
   if (Singleton<TurnManager>.Instance.PlayerPhase == TurnManager.PlayerTurnPhase.Draw) {
     draw = $"\nYou must choose whether you want to draw from main pile (remaining cards in your deck) or side pile (guaranteed Squirrel). If you choose main pile, do NOT specify your play yet, since in most cases you do not know what card you'll draw.";
   }
-  return $"{sOpponent()}\nTurn #{Singleton<TurnManager>.Instance.TurnNumber}\n{sScales()}\n{sBoardLeshySide()}\n{sBoardPlayerSide()}\n{sHand()}\nYou have {Singleton<ResourcesManager>.Instance.PlayerBones} bones (you get one each time your creature perishes for any reason)\n{sPiles()}\n{draw}\nWhen specifying your plays, make sure to explicitly clarify all the card placements and what cards to sacrifice.";
+  var surrender = "";
+  if (Singleton<TurnManager>.Instance.Opponent.OfferingSurrender) {
+    surrender = "\nLeshy had ran out of cards and offers you surrender. If you accept it, you just win the battle and continue going. It has no consequences. IN 99.9% OF CASES YOU SHOULD ACCEPT IT, SINCE YOU JUST WIN WITH 100% CHANCE INSTEAD OF RISKING OR WASTING TIME.";
+  }
+  return $"{sOpponent()}\nTurn #{Singleton<TurnManager>.Instance.TurnNumber}\n{sScales()}\n{sBoardLeshySide()}\n{sBoardPlayerSide()}\n{sHand()}\nYou have {Singleton<ResourcesManager>.Instance.PlayerBones} bones (you get one each time your creature perishes for any reason)\n{sPiles()}\n{draw}\nWhen specifying your plays, make sure to explicitly clarify all the card placements and what cards to sacrifice.{surrender}";
 }
 #endregion
 #region Event summarizers
