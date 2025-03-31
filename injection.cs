@@ -169,6 +169,17 @@ static string sScales() {
   }
 }
 
+static string sHookGrab() {
+  var grab = Singleton<TurnManager>.Instance.Opponent.GetComponent<FishHookGrab>();
+  if (grab == null) {
+    return "";
+  }
+  if (grab.hookTargetSlot == null || grab.hookTargetSlot.Card == null) {
+    return "Hook is currently targeting nothing.";
+  }
+  return $"Hook is currently targeting {sPlayableCard(grab.hookTargetSlot.Card)}.";
+}
+
 static (bool, string, string) sOpponent() {
   var somethingSpecial = false;
   var meta = "";
@@ -184,6 +195,37 @@ static (bool, string, string) sOpponent() {
     }
   }
   var notes = "";
+  if (_o is LeshyBossOpponent l) {
+    var leshyPhase = "";
+    switch (l.NumLives) {
+      case 1:
+        leshyPhase = "This is the final phase. DESTROY THE MOON.";
+        break;
+      case 2:
+        leshyPhase = "This is the second phase. Leshy will only play powerful Deathcards, and obstruct your cards with terrain at the beginning.";
+        break;
+      case 3:
+        leshyPhase = "This is the first phase. Leshy will only play powerful rare cards. He will alternate between masks of his subordinates, doing their boss fight gimmicks.";
+        break;
+    }
+    var currentMask = "";
+    if (l.NumLives > 1 && l.maskState == LeshyBossOpponent.MaskState.MaskEquipped) {
+      var bossMask = l.maskBossTypes[l.currentMaskIndex];
+      var mask = $" Leshy is currently wearing {bossMask.ToString().Replace("Boss", "")}'s mask.";
+      switch (bossMask) {
+        case Opponent.Type.ProspectorBoss:
+          currentMask = $"{mask} At the end of this turn (BEFORE his creatures attack), he will hit all your cards with pickaxe, turning them into non-sacrificable Gold Nuggets, effectively locking up your board until they are killed by his creatures. Cards turned into Gold Nuggets do NOT return to your hand, so you might want to keep some of cards in your hand to avoid losing in next phases. Ending the phase by doing enough scales damage delays this to the next turn.";
+          break;
+        case Opponent.Type.AnglerBoss:
+          currentMask = $"{mask} Leshy will initially target a random card with his hook, and then target any played card. And the end of this turn (BEFORE his creatures attack), he will pull the targeted card to his side. If there's a card opposing it, it will be pushed back into queue. If there's a queued card already, it will be removed from the board. It can be beneficial to play a weak card like a Squirrel opposing a threatening creature, so it gets pushed back instead of attacking you. {sHookGrab()}";
+          break;
+        case Opponent.Type.TrapperTraderBoss:
+          currentMask = $"{mask} At the end of this turn (BEFORE his creatures attack), he will play two new cards and let you to take any card from his side into your hand, but the rest will stay to fight against you.";
+          break;
+      }
+    }
+    notes = $"\n{leshyPhase}{currentMask}";
+  }
   if (_o is ProspectorBossOpponent p && p.NumLives == 2) {
     notes = "\nAt the end of phase 1, Prospector will strike all your cards with his pickaxe, turning them into non-sacrificable Gold Nuggets, effectively locking up your board until they are killed by his creatures. Cards turned into Gold Nuggets do NOT return to your hand, so you might want to keep some of cards in your hand to avoid losing in phase 2.\nKilling Pack Mule will give you free Squirrel and 3 random cards, so you may want to do that to have enough cards after Gold Nugget board wipe.";
   }
