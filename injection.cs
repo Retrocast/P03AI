@@ -101,8 +101,25 @@ static string sPlayableCard(PlayableCard p, bool withCost=false) {
   string tempSigils = _tempSigils.Count == 0 ? "" : "; temporary sigils(from totems/buffs/etc) - " + string.Join(", ", _tempSigils.Select(a => sAbilityInfo(a, c.DisplayedNameEnglish)));
   return $"{c.DisplayedNameEnglish} ({withCost ? cost : ""}{p.Attack} power{c.SpecialStatIcon == SpecialStatIcon.None ? "" : "[" + (string.IsNullOrEmpty(StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription) ? StatIconInfo.GetIconInfo(c.SpecialStatIcon).rulebookDescription : StatIconInfo.GetIconInfo(c.SpecialStatIcon).gbcDescription).Replace("[creature]", c.DisplayedNameEnglish) + "]"}; {p.Health} health; natural sigils - {naturalSigils}{infusedSigils}{tempSigils})";
 }
+static readonly Dictionary<string, string> MAP_REGIONS = new Dictionary<string, string>{
+  { "Forest", "The Woodlands" },
+  { "Wetlands", "The Wetlands" },
+  { "Alpine", "The Snow Line" },
+  // The most appropriate name (unfortunately it has no dialogue stating real one)
+  { "Midnight", "Leshy's Cabin" },
+  { "Midnight_Ascension", "Leshy's Cabin" },
+  // HEAVE. HO.
+  { "Pirateville", "The Pirateville" }
+};
+static string sMapRegion() {
+  var boss = (RunState.Run.map.EndNode as BossBattleNodeData).bossType.ToString().Replace("Boss", "");
+  if (boss == "PirateSkull") {
+    boss = "Royal Dominguez";
+  }
+  return $"You're on the map region {RunState.Run.regionTier + 1}/4 - {MAP_REGIONS[RunState.CurrentMapRegion.name] ?? RunState.CurrentMapRegion.name}. Boss of this region is {boss}. {RunState.Run.regionTier == 3 ? "Ready for the final boss fight?" : "Keep in mind that region 4 is final boss fight. You might make decisions differently, knowing that."}";
+}
 static string getMetadata() {
-  return $"{sDeck()}\n{sConsumables()}\n{sTotems()}";
+  return $"{sDeck()}\n{sConsumables()}\n{sTotems()}\n{sMapRegion()}";
 }
 #endregion
 #region Battle summarizers
@@ -308,7 +325,7 @@ static string sCampfire() {
 
 static string sBossRares() {
   var cards = string.Join("\n", snh().rareCardChoiceSequencer.gameObject.GetComponentsInChildren<SelectableCard>().Select(s => $"- {sCardInfo(s.Info, true)}"));
-  return $"As a reward for beating a boss, pick one of the following cards:\n{cards}";
+  return $"As a reward for beating a boss, pick one of the following cards:\n{cards}\nAfter choosing the card, you will advance to the next map region.";
 }
 
 static string sDeckTrial() {
