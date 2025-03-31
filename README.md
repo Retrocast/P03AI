@@ -19,14 +19,15 @@ Press `[` to send summary, press `]` to generate AI response.
   - [x] Drawing
   - [ ] General notes about the game (TL;DR of Leshy's tutorial)
   - [ ] More card info
+  - [ ] Snitching on Ijiraq
   - [ ] Boss battle
     - [ ] Angler's hook
     - [x] Trapper/Trader second phase explanation
     - [x] Prospector board wipe explanation
-    - [ ] Final boss fight shenanigans
-      - [ ] Pickaxe
-      - [ ] Hook
-      - [ ] Trading
+    - [x] Final boss fight shenanigans
+      - [x] Pickaxe
+      - [x] Hook
+      - [x] Trading
     - [x] Boss rares
   - [x] THE MOON
 - [x] Map
